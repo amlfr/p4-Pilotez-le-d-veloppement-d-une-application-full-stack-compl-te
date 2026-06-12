@@ -1,4 +1,4 @@
-package com.datashare.datashare_backend;
+package com.datashare;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
