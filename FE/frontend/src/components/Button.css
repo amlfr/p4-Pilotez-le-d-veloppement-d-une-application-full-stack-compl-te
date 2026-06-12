@@ -1,0 +1,36 @@
+.btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px;
+  border-radius: var(--radius-sm);
+  border: none;
+  font-size: 16px;
+  line-height: 16px;
+  font-weight: 400;
+  cursor: pointer;
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.btn--dark {
+  background: var(--color-dark);
+  color: var(--color-dark-text);
+}
+
+.btn--tonal {
+  width: 100%;
+  background: var(--color-accent-bg);
+  border: 1px solid var(--color-accent-border);
+  color: var(--color-accent-dark);
+}
+
+.btn--link {
+  width: 100%;
+  background: transparent;
+  color: var(--color-accent);
+}

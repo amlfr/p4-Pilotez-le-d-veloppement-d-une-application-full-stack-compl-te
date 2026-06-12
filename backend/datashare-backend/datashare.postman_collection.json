@@ -1,0 +1,146 @@
+{
+  "info": {
+    "name": "Datashare API",
+    "description": "Auth endpoints for the Datashare backend (Spring Boot, localhost:8080).\n\nUsage:\n1. Run **Auth > Register** to create the test account (uses the {{testEmail}} / {{testPassword}} variables).\n2. Run **Auth > Login** — its test script saves the returned JWT into the {{jwt}} collection variable.\n3. Any protected request (see the 'Protected (future)' folder) then sends `Authorization: Bearer {{jwt}}` automatically.\n\nEdit the collection variables (baseUrl / testEmail / testPassword) under the collection's Variables tab.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080", "type": "string" },
+    { "key": "testEmail", "value": "test@datashare.local", "type": "string" },
+    { "key": "testPassword", "value": "secret123", "type": "string" },
+    { "key": "jwt", "value": "", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "register"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Test User\",\n  \"email\": \"{{testEmail}}\",\n  \"password\": \"{{testPassword}}\"\n}"
+            },
+            "description": "Creates a new account. 201 with {id,name,email}; 409 if the email is already registered."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 201 (or 409 if already registered)', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([201, 409]);",
+                  "});",
+                  "if (pm.response.code === 201) {",
+                  "  var json = pm.response.json();",
+                  "  pm.test('returns id, name, email', function () {",
+                  "    pm.expect(json).to.have.property('id');",
+                  "    pm.expect(json).to.have.property('email');",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{testEmail}}\",\n  \"password\": \"{{testPassword}}\"\n}"
+            },
+            "description": "Validates credentials and returns a signed JWT. 200 with {token,tokenType,name,email}; 401 on bad credentials. Login is by email."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+                  "var json = pm.response.json();",
+                  "pm.test('returns a token', function () { pm.expect(json.token).to.be.a('string').and.not.empty; });",
+                  "if (json.token) {",
+                  "  pm.collectionVariables.set('jwt', json.token);",
+                  "  console.log('Saved JWT to {{jwt}}');",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login (bad credentials → 401)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{testEmail}}\",\n  \"password\": \"wrong-password\"\n}"
+            },
+            "description": "Negative test: wrong password must return 401 without revealing whether the email exists."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 401', function () { pm.response.to.have.status(401); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Protected (future)",
+      "description": "Placeholder requests for the upcoming File API. They send the captured JWT via the JwtAuthenticationFilter. They will 404 until the endpoints exist — kept here so the auth wiring is ready to use.",
+      "item": [
+        {
+          "name": "Example authenticated request",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/files",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "files"]
+            },
+            "description": "Sample protected call. Demonstrates sending `Authorization: Bearer {{jwt}}`. Expect 404 today (no File API yet); will be guarded by JwtAuthenticationFilter once File endpoints land — a missing/invalid token then yields 401."
+          }
+        }
+      ]
+    }
+  ]
+}

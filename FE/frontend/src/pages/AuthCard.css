@@ -1,0 +1,40 @@
+/* Shared card layout for the Connexion / Créer un compte pages */
+.auth-card {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  width: 100%;
+  max-width: 640px;
+  padding: 24px;
+  margin: 0 24px;
+  background: #fff;
+  border-radius: var(--radius-card);
+  box-shadow: 0 0 12px 0 rgba(0, 0, 0, 0.25);
+}
+
+.auth-card__title {
+  margin: 0;
+  font-size: 28px;
+  line-height: 40px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.auth-card__fields {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.auth-card__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.auth-card__error {
+  margin: 0;
+  font-size: 14px;
+  text-align: center;
+  color: #c00;
+}

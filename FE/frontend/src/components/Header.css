@@ -1,0 +1,33 @@
+.header {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+.header__inner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  max-width: 1280px;
+  padding: 16px;
+}
+
+.header__brand {
+  flex: 1;
+  font-size: 32px;
+  line-height: 40px;
+  font-weight: 700;
+  color: #000;
+  text-decoration: none;
+}
+
+.header__session {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.header__user {
+  font-size: 16px;
+}
