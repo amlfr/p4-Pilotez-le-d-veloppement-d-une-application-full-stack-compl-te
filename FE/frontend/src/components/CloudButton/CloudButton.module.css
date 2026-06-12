@@ -1,0 +1,17 @@
+.cloud {
+  display: flex;
+  align-items: center;
+  padding: 24px;
+  border: none;
+  border-radius: 240px;
+  background: var(--color-cloud-outer);
+  cursor: pointer;
+}
+
+.inner {
+  display: flex;
+  align-items: center;
+  padding: 24px;
+  border-radius: 240px;
+  background: var(--color-cloud-inner);
+}

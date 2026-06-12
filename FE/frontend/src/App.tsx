@@ -1,6 +1,6 @@
 import { Route, Routes } from "react-router";
 import { Header } from "./components";
-import { Home, Login, Register } from "./pages";
+import { Home, Login, Register, Upload } from "./pages";
 import styles from "./App.module.css";
 
 function App() {
@@ -12,6 +12,7 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/upload" element={<Upload />} />
         </Routes>
       </main>
       <footer className={styles.footer}>

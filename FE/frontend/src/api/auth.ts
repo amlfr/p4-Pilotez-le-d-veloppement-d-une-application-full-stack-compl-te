@@ -35,6 +35,18 @@ export function decodeToken(token: string): {
   return JSON.parse(atob(payload));
 }
 
+/** Builds an ApiError from a failed response (OpenAPI ErrorResponse body). */
+export async function toApiError(response: Response): Promise<ApiError> {
+  let message = `Erreur ${response.status}`;
+  try {
+    const data = (await response.json()) as ErrorBody;
+    if (data.message) message = data.message;
+  } catch {
+    // Non-JSON error body; keep the generic message.
+  }
+  return new ApiError(response.status, message);
+}
+
 async function post<T>(path: string, body: unknown): Promise<T> {
   const response = await fetch(path, {
     method: "POST",
@@ -43,14 +55,7 @@ async function post<T>(path: string, body: unknown): Promise<T> {
   });
 
   if (!response.ok) {
-    let message = `Erreur ${response.status}`;
-    try {
-      const data = (await response.json()) as ErrorBody;
-      if (data.message) message = data.message;
-    } catch {
-      // Non-JSON error body; keep the generic message.
-    }
-    throw new ApiError(response.status, message);
+    throw await toApiError(response);
   }
 
   return response.json();
