@@ -4,24 +4,24 @@ import {
   type ChangeEvent,
   type DragEvent,
   type FormEvent,
-} from "react";
-import { Navigate } from "react-router";
-import { ApiError } from "../../api/auth";
-import { uploadFile, type UploadResponse } from "../../api/files";
-import { useAuthStore } from "../../store/auth";
-import { Button, CloudButton, InputField, SelectField } from "../../components";
-import styles from "./Upload.module.css";
+} from 'react';
+import { Navigate } from 'react-router';
+import { ApiError } from '../../api/auth';
+import { uploadFile, type UploadResponse } from '../../api/files';
+import { useAuthStore } from '../../store/auth';
+import { Button, CloudButton, InputField, SelectField } from '../../components';
+import styles from './Upload.module.css';
 
 const MAX_SIZE_BYTES = 1024 ** 3; // 1 Go, same limit as the backend
 const FORBIDDEN_EXTENSIONS = [
-  ".exe",
-  ".bat",
-  ".sh",
-  ".ps1",
-  ".msi",
-  ".dll",
-  ".vbs",
-  ".cmd",
+  '.exe',
+  '.bat',
+  '.sh',
+  '.ps1',
+  '.msi',
+  '.dll',
+  '.vbs',
+  '.cmd',
 ];
 
 function FileIcon() {
@@ -43,9 +43,8 @@ function FileIcon() {
   );
 }
 
-/** French file size, e.g. "2,6 Mo" like the Figma mockups. */
 function formatSize(bytes: number): string {
-  const units = ["o", "Ko", "Mo", "Go"];
+  const units = ['o', 'Ko', 'Mo', 'Go'];
   let value = bytes;
   let unit = 0;
   while (value >= 1024 && unit < units.length - 1) {
@@ -53,25 +52,25 @@ function formatSize(bytes: number): string {
     unit += 1;
   }
   const rounded =
-    unit === 0 ? String(value) : value.toFixed(1).replace(/\.0$/, "");
-  return `${rounded.replace(".", ",")} ${units[unit]}`;
+    unit === 0 ? String(value) : value.toFixed(1).replace(/\.0$/, '');
+  return `${rounded.replace('.', ',')} ${units[unit]}`;
 }
 
 function validateFile(file: File): string {
   if (file.size > MAX_SIZE_BYTES) {
-    return "La taille des fichiers est limitée à 1 Go";
+    return 'La taille des fichiers est limitée à 1 Go';
   }
-  const dot = file.name.lastIndexOf(".");
-  const extension = dot === -1 ? "" : file.name.slice(dot).toLowerCase();
+  const dot = file.name.lastIndexOf('.');
+  const extension = dot === -1 ? '' : file.name.slice(dot).toLowerCase();
   if (FORBIDDEN_EXTENSIONS.includes(extension)) {
     return "Ce type de fichier n'est pas autorisé";
   }
-  return "";
+  return '';
 }
 
 function retentionLabel(days: number): string {
-  if (days === 7) return "une semaine";
-  return days === 1 ? "1 jour" : `${days} jours`;
+  if (days === 7) return 'une semaine';
+  return days === 1 ? '1 jour' : `${days} jours`;
 }
 
 export default function Upload() {
@@ -79,12 +78,12 @@ export default function Upload() {
 
   const inputRef = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
-  const [fileError, setFileError] = useState("");
-  const [password, setPassword] = useState("");
-  const [passwordError, setPasswordError] = useState("");
+  const [fileError, setFileError] = useState('');
+  const [password, setPassword] = useState('');
+  const [passwordError, setPasswordError] = useState('');
   const [expiresInDays, setExpiresInDays] = useState(7);
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState('');
   const [result, setResult] = useState<UploadResponse | null>(null);
   const [copied, setCopied] = useState(false);
 
@@ -95,7 +94,7 @@ export default function Upload() {
   const selectFile = (selected: File) => {
     setFile(selected);
     setFileError(validateFile(selected));
-    setError("");
+    setError('');
     setResult(null);
   };
 
@@ -103,7 +102,7 @@ export default function Upload() {
     const selected = event.target.files?.[0];
     if (selected) selectFile(selected);
     // Reset so picking the same file again still fires a change event.
-    event.target.value = "";
+    event.target.value = '';
   };
 
   const handleDragOver = (event: DragEvent<HTMLButtonElement>) => {
@@ -118,18 +117,18 @@ export default function Upload() {
 
   const handleRemove = () => {
     setFile(null);
-    setFileError("");
-    setError("");
+    setFileError('');
+    setError('');
   };
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
     if (!file || fileError || submitting) return;
     if (password && password.length < 6) {
-      setPasswordError("Le mot de passe doit contenir au moins 6 caractères");
+      setPasswordError('Le mot de passe doit contenir au moins 6 caractères');
       return;
     }
-    setError("");
+    setError('');
     setSubmitting(true);
     try {
       const response = await uploadFile(
@@ -140,12 +139,12 @@ export default function Upload() {
       setResult(response);
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) {
-        setError("Session expirée, veuillez vous reconnecter");
+        setError('Session expirée, veuillez vous reconnecter');
       } else if (err instanceof ApiError) {
         // Backend messages (413, 415, 422...) are already in French.
         setError(err.message);
       } else {
-        setError("Une erreur est survenue, réessayez plus tard");
+        setError('Une erreur est survenue, réessayez plus tard');
       }
     } finally {
       setSubmitting(false);
@@ -179,12 +178,12 @@ export default function Upload() {
             </div>
           </div>
           <p className={styles.congrats}>
-            Félicitations, ton fichier sera conservé chez nous pendant{" "}
+            Félicitations, ton fichier sera conservé chez nous pendant{' '}
             {retentionLabel(expiresInDays)}&nbsp;!
           </p>
           <p className={styles.linkBox}>{result.download_url}</p>
           <Button variant="tonal" type="button" onClick={handleCopy}>
-            {copied ? "Lien copié !" : "Copier le lien"}
+            {copied ? 'Lien copié !' : 'Copier le lien'}
           </Button>
         </section>
       </div>
@@ -226,7 +225,7 @@ export default function Upload() {
               error={passwordError}
               onChange={(e) => {
                 setPassword(e.target.value);
-                setPasswordError("");
+                setPasswordError('');
               }}
             />
             <SelectField
@@ -236,7 +235,7 @@ export default function Upload() {
             >
               {[1, 2, 3, 4, 5, 6, 7].map((days) => (
                 <option key={days} value={days}>
-                  {days === 1 ? "1 jour" : `${days} jours`}
+                  {days === 1 ? '1 jour' : `${days} jours`}
                 </option>
               ))}
             </SelectField>
@@ -248,7 +247,7 @@ export default function Upload() {
             className={styles.submit}
             disabled={submitting || Boolean(fileError)}
           >
-            {submitting ? "Téléversement..." : "Téléverser"}
+            {submitting ? 'Téléversement...' : 'Téléverser'}
           </Button>
         </form>
       </div>

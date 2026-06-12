@@ -1,6 +1,6 @@
 import { Link, useNavigate } from "react-router";
 import { useAuthStore } from "../../store/auth";
-import Button from "../Button";
+import Button from "../Button/Button";
 import styles from "./Header.module.css";
 
 export default function Header() {
