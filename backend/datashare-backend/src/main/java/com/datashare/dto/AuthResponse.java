@@ -1,13 +1,11 @@
 package com.datashare.dto;
 
-/** Returned after a successful login. */
+import java.util.UUID;
+
+/** 201 body of POST /api/auth/register (OpenAPI: AuthResponse). */
 public record AuthResponse(
-        String token,
-        String tokenType,
-        String name,
-        String email
+        UUID id,
+        String email,
+        String token
 ) {
-    public static AuthResponse bearer(String token, String name, String email) {
-        return new AuthResponse(token, "Bearer", name, email);
-    }
 }

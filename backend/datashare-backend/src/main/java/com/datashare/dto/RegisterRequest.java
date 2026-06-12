@@ -6,15 +6,16 @@ import jakarta.validation.constraints.Size;
 
 public record RegisterRequest(
 
-        @NotBlank(message = "Name is required")
+        // Not part of the OpenAPI contract (extra property): optional display name.
+        // Defaults to the email local part when omitted.
         String name,
 
-        @NotBlank(message = "Email is required")
-        @Email(message = "Email must be valid")
+        @NotBlank(message = "L'email est requis")
+        @Email(message = "Le format de l'email est invalide")
         String email,
 
-        @NotBlank(message = "Password is required")
-        @Size(min = 8, message = "Password must be at least 8 characters")
+        @NotBlank(message = "Le mot de passe est requis")
+        @Size(min = 8, message = "Le mot de passe doit contenir au moins 8 caractères")
         String password
 ) {
 }

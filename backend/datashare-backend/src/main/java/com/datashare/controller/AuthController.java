@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.datashare.dto.AuthResponse;
 import com.datashare.dto.LoginRequest;
 import com.datashare.dto.RegisterRequest;
-import com.datashare.dto.UserResponse;
+import com.datashare.dto.TokenResponse;
 import com.datashare.service.AuthService;
 
 import jakarta.validation.Valid;
@@ -25,12 +25,12 @@ public class AuthController {
 
     @PostMapping("/register")
     @ResponseStatus(HttpStatus.CREATED)
-    public UserResponse register(@Valid @RequestBody RegisterRequest request) {
+    public AuthResponse register(@Valid @RequestBody RegisterRequest request) {
         return authService.register(request);
     }
 
     @PostMapping("/login")
-    public AuthResponse login(@Valid @RequestBody LoginRequest request) {
+    public TokenResponse login(@Valid @RequestBody LoginRequest request) {
         return authService.login(request);
     }
 }

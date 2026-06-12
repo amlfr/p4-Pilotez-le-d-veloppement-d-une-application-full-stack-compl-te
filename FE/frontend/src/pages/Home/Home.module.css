@@ -6,7 +6,7 @@
   padding: 0 24px;
 }
 
-.home__question {
+.question {
   margin: 0;
   font-size: 30px;
   font-weight: 300;
@@ -14,7 +14,7 @@
   text-align: center;
 }
 
-.home__upload {
+.upload {
   display: flex;
   align-items: center;
   padding: 24px;
@@ -24,7 +24,7 @@
   cursor: pointer;
 }
 
-.home__upload-inner {
+.uploadInner {
   display: flex;
   align-items: center;
   padding: 24px;

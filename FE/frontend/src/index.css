@@ -12,8 +12,8 @@
   --color-placeholder: #b3b3b3;
   --color-cloud-outer: rgba(47, 25, 13, 0.15);
   --color-cloud-inner: #100218;
-  --font-main: 'DM Sans', sans-serif;
-  --font-body: 'Inter', sans-serif;
+  --font-main: "DM Sans", sans-serif;
+  --font-body: "Inter", sans-serif;
   --radius-sm: 8px;
   --radius-card: 16px;
 }
@@ -27,7 +27,11 @@ body {
   min-height: 100vh;
   font-family: var(--font-main);
   color: #000;
-  background: linear-gradient(175deg, var(--gradient-start) 2.29%, var(--gradient-end) 97.72%);
+  background: linear-gradient(
+    175deg,
+    var(--gradient-start) 2.29%,
+    var(--gradient-end) 97.72%
+  );
   background-attachment: fixed;
 }
 

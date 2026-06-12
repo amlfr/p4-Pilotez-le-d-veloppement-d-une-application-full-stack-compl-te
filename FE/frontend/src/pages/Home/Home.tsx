@@ -1,6 +1,6 @@
-import { useNavigate } from 'react-router'
-import { useAuthStore } from '../store/auth'
-import './Home.css'
+import { useNavigate } from "react-router";
+import { useAuthStore } from "../../store/auth";
+import styles from "./Home.module.css";
 
 function UploadCloudIcon() {
   return (
@@ -19,34 +19,34 @@ function UploadCloudIcon() {
       <path d="M12 12v9" />
       <path d="m16 16-4-4-4 4" />
     </svg>
-  )
+  );
 }
 
 export default function Home() {
-  const navigate = useNavigate()
-  const isLoggedIn = useAuthStore((state) => state.token !== null)
+  const navigate = useNavigate();
+  const isLoggedIn = useAuthStore((state) => state.token !== null);
 
   // Upload requires an account: send anonymous visitors to the login page.
   // The real upload flow comes with the File API.
   const handleUploadClick = () => {
     if (!isLoggedIn) {
-      navigate('/login')
+      navigate("/login");
     }
-  }
+  };
 
   return (
-    <div className="home">
-      <p className="home__question">Tu veux partager un fichier ?</p>
+    <div className={styles.home}>
+      <p className={styles.question}>Tu veux partager un fichier ?</p>
       <button
         type="button"
-        className="home__upload"
+        className={styles.upload}
         onClick={handleUploadClick}
         aria-label="Ajouter un fichier"
       >
-        <span className="home__upload-inner">
+        <span className={styles.uploadInner}>
           <UploadCloudIcon />
         </span>
       </button>
     </div>
-  )
+  );
 }

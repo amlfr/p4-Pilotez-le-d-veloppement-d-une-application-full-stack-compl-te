@@ -30,7 +30,7 @@
               "mode": "raw",
               "raw": "{\n  \"name\": \"Test User\",\n  \"email\": \"{{testEmail}}\",\n  \"password\": \"{{testPassword}}\"\n}"
             },
-            "description": "Creates a new account. 201 with {id,name,email}; 409 if the email is already registered."
+            "description": "Creates a new account. 201 with {id,email,token} (auto-login per OpenAPI spec); 409 if the email is already registered; 422 on validation failure (password < 8 chars)."
           },
           "event": [
             {
@@ -43,10 +43,12 @@
                   "});",
                   "if (pm.response.code === 201) {",
                   "  var json = pm.response.json();",
-                  "  pm.test('returns id, name, email', function () {",
+                  "  pm.test('returns id, email, token', function () {",
                   "    pm.expect(json).to.have.property('id');",
                   "    pm.expect(json).to.have.property('email');",
+                  "    pm.expect(json.token).to.be.a('string').and.not.empty;",
                   "  });",
+                  "  pm.collectionVariables.set('jwt', json.token);",
                   "}"
                 ]
               }
@@ -69,7 +71,7 @@
               "mode": "raw",
               "raw": "{\n  \"email\": \"{{testEmail}}\",\n  \"password\": \"{{testPassword}}\"\n}"
             },
-            "description": "Validates credentials and returns a signed JWT. 200 with {token,tokenType,name,email}; 401 on bad credentials. Login is by email."
+            "description": "Validates credentials and returns a signed JWT. 200 with {token,expires_in}; 401 on bad credentials. Login is by email."
           },
           "event": [
             {
@@ -80,6 +82,7 @@
                   "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
                   "var json = pm.response.json();",
                   "pm.test('returns a token', function () { pm.expect(json.token).to.be.a('string').and.not.empty; });",
+                  "pm.test('returns expires_in', function () { pm.expect(json.expires_in).to.be.a('number'); });",
                   "if (json.token) {",
                   "  pm.collectionVariables.set('jwt', json.token);",
                   "  console.log('Saved JWT to {{jwt}}');",

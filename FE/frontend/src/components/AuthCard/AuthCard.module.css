@@ -1,18 +1,25 @@
-/* Shared card layout for the Connexion / Créer un compte pages */
-.auth-card {
+.card {
   display: flex;
   flex-direction: column;
   gap: 24px;
-  width: 100%;
+  /* Side gutters are part of the width so the card never overflows the viewport. */
+  width: calc(100% - 48px);
   max-width: 640px;
   padding: 24px;
-  margin: 0 24px;
   background: #fff;
   border-radius: var(--radius-card);
   box-shadow: 0 0 12px 0 rgba(0, 0, 0, 0.25);
 }
 
-.auth-card__title {
+@media (max-width: 480px) {
+  .card {
+    width: calc(100% - 32px);
+    padding: 16px;
+    gap: 16px;
+  }
+}
+
+.title {
   margin: 0;
   font-size: 28px;
   line-height: 40px;
@@ -20,19 +27,19 @@
   text-align: center;
 }
 
-.auth-card__fields {
+.fields {
   display: flex;
   flex-direction: column;
   gap: 16px;
 }
 
-.auth-card__actions {
+.actions {
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
 
-.auth-card__error {
+.error {
   margin: 0;
   font-size: 14px;
   text-align: center;

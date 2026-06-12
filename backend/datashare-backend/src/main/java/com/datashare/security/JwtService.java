@@ -31,11 +31,16 @@ public class JwtService {
 
         return JWT.create()
                 .withSubject(user.getEmail())
-                .withClaim("userId", user.getId())
+                .withClaim("userId", user.getId().toString())
                 .withClaim("name", user.getName())
                 .withIssuedAt(now)
                 .withExpiresAt(expiry)
                 .sign(algorithm);
+    }
+
+    /** Token lifetime in seconds (the OpenAPI TokenResponse.expires_in field). */
+    public long getExpiresInSeconds() {
+        return expirationMs / 1000;
     }
 
     /**

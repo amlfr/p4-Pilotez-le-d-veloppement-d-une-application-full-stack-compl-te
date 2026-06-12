@@ -4,7 +4,7 @@
   width: 100%;
 }
 
-.header__inner {
+.inner {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -13,7 +13,7 @@
   padding: 16px;
 }
 
-.header__brand {
+.brand {
   flex: 1;
   font-size: 32px;
   line-height: 40px;
@@ -22,12 +22,28 @@
   text-decoration: none;
 }
 
-.header__session {
+.session {
   display: flex;
   align-items: center;
   gap: 16px;
+  min-width: 0;
 }
 
-.header__user {
+.user {
   font-size: 16px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 480px) {
+  .brand {
+    font-size: 24px;
+    line-height: 32px;
+  }
+
+  .session {
+    gap: 8px;
+  }
 }

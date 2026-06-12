@@ -1,58 +1,69 @@
 export interface AuthResponse {
-  token: string
-  tokenType: string
-  name: string
-  email: string
+  id: string;
+  email: string;
+  token: string;
 }
 
-export interface UserResponse {
-  id: number
-  name: string
-  email: string
+export interface TokenResponse {
+  token: string;
+  expires_in: number;
+}
+
+interface ErrorBody {
+  status: number;
+  error: string;
+  message: string;
+  timestamp: string;
 }
 
 export class ApiError extends Error {
-  status: number
-  /** Field-level validation errors ({field: message}) when the backend returns 400. */
-  fields?: Record<string, string>
+  status: number;
 
-  constructor(status: number, message: string, fields?: Record<string, string>) {
-    super(message)
-    this.status = status
-    this.fields = fields
+  constructor(status: number, message: string) {
+    super(message);
+    this.status = status;
   }
+}
+
+/** Decodes the JWT payload (no verification — display purposes only). */
+export function decodeToken(token: string): {
+  sub: string;
+  name?: string;
+  userId?: string;
+} {
+  const payload = token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
+  return JSON.parse(atob(payload));
 }
 
 async function post<T>(path: string, body: unknown): Promise<T> {
   const response = await fetch(path, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
-  })
+  });
 
   if (!response.ok) {
-    let message = `Erreur ${response.status}`
-    let fields: Record<string, string> | undefined
+    let message = `Erreur ${response.status}`;
     try {
-      const data = await response.json()
-      if (data.message) {
-        message = data.message
-      } else if (typeof data === 'object') {
-        fields = data
-      }
+      const data = (await response.json()) as ErrorBody;
+      if (data.message) message = data.message;
     } catch {
       // Non-JSON error body; keep the generic message.
     }
-    throw new ApiError(response.status, message, fields)
+    throw new ApiError(response.status, message);
   }
 
-  return response.json()
+  return response.json();
 }
 
-export function login(email: string, password: string): Promise<AuthResponse> {
-  return post('/api/auth/login', { email, password })
+export function login(email: string, password: string): Promise<TokenResponse> {
+  return post("/api/auth/login", { email, password });
 }
 
-export function register(name: string, email: string, password: string): Promise<UserResponse> {
-  return post('/api/auth/register', { name, email, password })
+export function register(
+  name: string,
+  email: string,
+  password: string,
+): Promise<AuthResponse> {
+  return post("/api/auth/register", { name, email, password });
 }
