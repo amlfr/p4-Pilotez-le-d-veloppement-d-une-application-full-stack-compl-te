@@ -26,6 +26,20 @@ public class FileStorageService {
         }
     }
 
+    /** Removes the physical file; missing files are tolerated (already gone is fine). */
+    public void delete(String storedName) {
+        Path target = root.resolve(storedName).normalize();
+        if (!target.startsWith(root)) {
+            return;
+        }
+        try {
+            Files.deleteIfExists(target);
+        } catch (IOException e) {
+            throw new ResponseStatusException(
+                    HttpStatus.INTERNAL_SERVER_ERROR, "Échec de la suppression du fichier");
+        }
+    }
+
     /** Writes the upload to disk under {@code storedName}, returning the absolute path used. */
     public Path store(MultipartFile file, String storedName) {
         Path target = root.resolve(storedName).normalize();

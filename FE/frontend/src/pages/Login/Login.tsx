@@ -21,7 +21,7 @@ export default function Login() {
       const { token } = await login(email, password);
       const claims = decodeToken(token);
       setSession(token, claims.name ?? claims.sub, claims.sub);
-      navigate("/");
+      navigate("/files");
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) {
         setError("Email ou mot de passe incorrect");

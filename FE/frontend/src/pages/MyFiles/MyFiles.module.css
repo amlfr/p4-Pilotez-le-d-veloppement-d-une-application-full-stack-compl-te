@@ -1,0 +1,162 @@
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  width: 100%;
+  max-width: 1133px;
+  padding: 24px;
+  background: #fff;
+  border-radius: var(--radius-card);
+  box-shadow: 0 0 12px 0 rgba(0, 0, 0, 0.25);
+}
+
+.title {
+  margin: 0;
+  font-size: 28px;
+  line-height: 40px;
+  font-weight: 700;
+}
+
+.filters {
+  display: flex;
+  width: fit-content;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.filter {
+  padding: 8px 24px;
+  border: none;
+  background: #fff;
+  font-size: 14px;
+  line-height: 16px;
+  cursor: pointer;
+}
+
+.filter + .filter {
+  border-left: 1px solid var(--color-border);
+}
+
+.filterActive {
+  background: var(--color-accent-bg);
+  color: var(--color-accent-dark);
+  font-weight: 500;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  padding: 8px 0;
+}
+
+.row + .row {
+  border-top: 1px solid var(--color-border);
+}
+
+.fileIcon {
+  display: flex;
+  flex-shrink: 0;
+  color: var(--color-dark);
+}
+
+.fileInfo {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.fileName {
+  font-size: 16px;
+  line-height: 24px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fileExpiry {
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--color-placeholder);
+}
+
+.expired {
+  color: #c00;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.lock {
+  display: flex;
+  color: var(--color-dark);
+}
+
+.card .rowButton {
+  width: auto;
+  padding: 8px 12px;
+  font-size: 14px;
+  line-height: 16px;
+}
+
+.expiredNote {
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--color-placeholder);
+}
+
+.empty {
+  margin: 0;
+  font-size: 16px;
+  color: var(--color-placeholder);
+}
+
+.error {
+  margin: 0;
+  font-size: 14px;
+  color: #c00;
+}
+
+@media (max-width: 480px) {
+  .card {
+    padding: 16px;
+    gap: 16px;
+  }
+
+  .filter {
+    flex: 1;
+    padding: 8px 0;
+  }
+
+  .filters {
+    width: 100%;
+  }
+
+  .row {
+    flex-wrap: wrap;
+  }
+
+  .actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .expiredNote {
+    text-align: right;
+  }
+}

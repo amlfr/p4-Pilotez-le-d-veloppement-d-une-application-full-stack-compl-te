@@ -1,8 +1,11 @@
 package com.datashare.controller;
 
 import java.security.Principal;
+import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -31,5 +34,12 @@ public class FileController {
             @RequestParam(value = "password", required = false) String password,
             Principal principal) {
         return fileService.upload(file, expiresInDays, password, principal.getName());
+    }
+
+    /** Delete a file, owner only (OpenAPI: DELETE /files/{id}). */
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void delete(@PathVariable UUID id, Principal principal) {
+        fileService.deleteFile(id, principal.getName());
     }
 }

@@ -1,4 +1,5 @@
 import {
+  useEffect,
   useRef,
   useState,
   type ChangeEvent,
@@ -9,6 +10,7 @@ import { Navigate } from 'react-router';
 import { ApiError } from '../../api/auth';
 import { uploadFile, type UploadResponse } from '../../api/files';
 import { useAuthStore } from '../../store/auth';
+import { clearPendingFile, peekPendingFile } from '../../store/pendingUpload';
 import { Button, CloudButton, InputField, SelectField } from '../../components';
 import styles from './Upload.module.css';
 
@@ -77,8 +79,15 @@ export default function Upload() {
   const token = useAuthStore((state) => state.token);
 
   const inputRef = useRef<HTMLInputElement>(null);
-  const [file, setFile] = useState<File | null>(null);
-  const [fileError, setFileError] = useState('');
+  // A file picked on the Home page arrives through the pendingUpload handoff.
+  const [file, setFile] = useState<File | null>(() => peekPendingFile());
+  const [fileError, setFileError] = useState(() => {
+    const pending = peekPendingFile();
+    return pending ? validateFile(pending) : '';
+  });
+  useEffect(() => {
+    clearPendingFile();
+  }, []);
   const [password, setPassword] = useState('');
   const [passwordError, setPasswordError] = useState('');
   const [expiresInDays, setExpiresInDays] = useState(7);
@@ -87,8 +96,10 @@ export default function Upload() {
   const [result, setResult] = useState<UploadResponse | null>(null);
   const [copied, setCopied] = useState(false);
 
+  // Redundant with the RequireAuth route guard, but keeps TypeScript's
+  // narrowing of `token` for the calls below.
   if (!token) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/" replace />;
   }
 
   const selectFile = (selected: File) => {

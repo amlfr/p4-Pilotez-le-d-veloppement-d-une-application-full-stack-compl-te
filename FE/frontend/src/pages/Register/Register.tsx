@@ -23,7 +23,7 @@ export default function Register() {
       const { token } = await register(name, email, password);
       const claims = decodeToken(token);
       setSession(token, claims.name ?? claims.sub, claims.sub);
-      navigate("/");
+      navigate("/files");
     } catch (err) {
       if (
         err instanceof ApiError &&

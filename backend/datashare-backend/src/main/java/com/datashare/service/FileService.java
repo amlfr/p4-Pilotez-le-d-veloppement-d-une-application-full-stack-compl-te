@@ -2,11 +2,15 @@ package com.datashare.service;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -14,6 +18,8 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.datashare.dto.FileListItem;
+import com.datashare.dto.FileListResponse;
 import com.datashare.dto.UploadResponse;
 import com.datashare.entity.StoredFile;
 import com.datashare.entity.User;
@@ -82,6 +88,54 @@ public class FileService {
 
         StoredFile saved = fileRepository.save(stored);
         return new UploadResponse(saved.getId(), downloadUrl(token), token, saved.getExpirationDate());
+    }
+
+    /** Paginated history of the user's uploads, newest first (OpenAPI: GET /me/files). */
+    public FileListResponse listFiles(int page, int perPage, String email) {
+        User owner = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.UNAUTHORIZED, "Authentification requise"));
+
+        int safePage = Math.max(page, 1);
+        int safePerPage = Math.clamp(perPage, 1, 50);
+
+        // The spec's page is 1-based, Spring's PageRequest is 0-based.
+        Page<StoredFile> result = fileRepository.findByOwner(
+                owner,
+                PageRequest.of(safePage - 1, safePerPage, Sort.by(Sort.Direction.DESC, "uploadDate")));
+
+        List<FileListItem> items = result.getContent().stream()
+                .map(this::toListItem)
+                .toList();
+        return new FileListResponse(items, result.getTotalElements(), safePage, safePerPage);
+    }
+
+    /** Deletes a file the user owns: physical bytes first, then the metadata row. */
+    public void deleteFile(UUID id, String email) {
+        StoredFile file = fileRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "Fichier introuvable"));
+
+        if (file.getOwner() == null || !email.equals(file.getOwner().getEmail())) {
+            throw new ResponseStatusException(
+                    HttpStatus.FORBIDDEN, "Ce fichier appartient à un autre utilisateur");
+        }
+
+        storage.delete(file.getStoredName());
+        fileRepository.delete(file);
+    }
+
+    private FileListItem toListItem(StoredFile file) {
+        return new FileListItem(
+                file.getId(),
+                file.getOriginalName(),
+                file.getSizeBytes(),
+                file.getUploadDate(),
+                file.getExpirationDate(),
+                file.getExpirationDate().isBefore(Instant.now()),
+                downloadUrl(file.getDownloadToken()),
+                List.of(), // tags arrive with the Tags feature
+                file.getPassword() != null);
     }
 
     private void validate(MultipartFile file, Integer expiresInDays, String password) {

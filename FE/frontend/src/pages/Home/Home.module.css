@@ -6,6 +6,10 @@
   padding: 0 24px;
 }
 
+.fileInput {
+  display: none;
+}
+
 .question {
   margin: 0;
   font-size: 30px;
