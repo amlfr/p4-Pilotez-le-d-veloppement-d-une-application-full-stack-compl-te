@@ -8,7 +8,7 @@ import {
 } from 'react';
 import { Navigate } from 'react-router';
 import { ApiError } from '../../api/auth';
-import { uploadFile, type UploadResponse } from '../../api/files';
+import { buildShareLink, uploadFile, type UploadResponse } from '../../api/files';
 import { useAuthStore } from '../../store/auth';
 import { clearPendingFile, peekPendingFile } from '../../store/pendingUpload';
 import { Button, CloudButton, InputField, SelectField } from '../../components';
@@ -165,7 +165,7 @@ export default function Upload() {
   const handleCopy = async () => {
     if (!result) return;
     try {
-      await navigator.clipboard.writeText(result.download_url);
+      await navigator.clipboard.writeText(buildShareLink(result.token));
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
@@ -192,7 +192,7 @@ export default function Upload() {
             Félicitations, ton fichier sera conservé chez nous pendant{' '}
             {retentionLabel(expiresInDays)}&nbsp;!
           </p>
-          <p className={styles.linkBox}>{result.download_url}</p>
+          <p className={styles.linkBox}>{buildShareLink(result.token)}</p>
           <Button variant="tonal" type="button" onClick={handleCopy}>
             {copied ? 'Lien copié !' : 'Copier le lien'}
           </Button>

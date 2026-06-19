@@ -1,6 +1,6 @@
 import { Outlet, Route, Routes } from "react-router";
 import { Header, RequireAuth } from "./components";
-import { Home, Login, MyFiles, Register, Upload } from "./pages";
+import { Download, Home, Login, MyFiles, Register, Upload } from "./pages";
 import styles from "./App.module.css";
 
 /** Default shell: header + gradient body + footer. "Mon espace" has its own. */
@@ -25,6 +25,8 @@ function App() {
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        {/* Public recipient page: anyone with the link can view + download (US02). */}
+        <Route path="/d/:token" element={<Download />} />
         <Route element={<RequireAuth />}>
           <Route path="/upload" element={<Upload />} />
         </Route>

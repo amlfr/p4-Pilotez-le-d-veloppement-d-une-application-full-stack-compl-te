@@ -2,6 +2,7 @@ package com.datashare.security;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -31,6 +32,9 @@ public class SecurityConfig {
                         // sendError() is re-evaluated as anonymous and turned into a 403.
                         .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
                         .requestMatchers("/api/auth/**").permitAll()
+                        // Public download by link: metadata + file bytes (US02). Upload (POST)
+                        // and delete (DELETE) on /api/files stay authenticated.
+                        .requestMatchers(HttpMethod.GET, "/api/files/*", "/api/files/*/download").permitAll()
                         .anyRequest().authenticated())
                 // Unauthenticated requests get the contract's 401 ErrorResponse, not a bare 403.
                 .exceptionHandling(handling -> handling

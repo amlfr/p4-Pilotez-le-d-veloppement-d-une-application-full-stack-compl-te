@@ -8,6 +8,7 @@ import java.util.Set;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -20,6 +21,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import com.datashare.dto.FileListItem;
 import com.datashare.dto.FileListResponse;
+import com.datashare.dto.FileMetadata;
 import com.datashare.dto.UploadResponse;
 import com.datashare.entity.StoredFile;
 import com.datashare.entity.User;
@@ -108,6 +110,62 @@ public class FileService {
                 .map(this::toListItem)
                 .toList();
         return new FileListResponse(items, result.getTotalElements(), safePage, safePerPage);
+    }
+
+    /**
+     * File details shown before download (OpenAPI: GET /files/{token}). An invalid token or an
+     * already-expired file both surface as 404, hiding whether the link ever existed.
+     */
+    public FileMetadata getMetadata(String token) {
+        StoredFile file = findByToken(token);
+        if (file.getExpirationDate().isBefore(Instant.now())) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Lien invalide ou expiré");
+        }
+        return new FileMetadata(
+                file.getOriginalName(),
+                file.getSizeBytes(),
+                file.getContentType(),
+                file.getExpirationDate(),
+                file.getPassword() != null);
+    }
+
+    /**
+     * Resolves a download (OpenAPI: GET /files/{token}/download): 404 for an unknown token,
+     * 410 once expired, 401 when a required password is missing or wrong.
+     */
+    public DownloadResult download(String token, String password) {
+        StoredFile file = findByToken(token);
+        if (file.getExpirationDate().isBefore(Instant.now())) {
+            throw new ResponseStatusException(
+                    HttpStatus.GONE, "Le fichier a expiré ou a été supprimé");
+        }
+        if (file.getPassword() != null) {
+            if (password == null || password.isBlank()) {
+                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Mot de passe requis");
+            }
+            if (!passwordEncoder.matches(password, file.getPassword())) {
+                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Mot de passe incorrect");
+            }
+        }
+        Resource resource = storage.load(file.getStoredName());
+        return new DownloadResult(
+                resource, file.getOriginalName(), file.getContentType(), file.getSizeBytes());
+    }
+
+    /** Everything the controller needs to stream a file back with the right headers. */
+    public record DownloadResult(Resource resource, String filename, String contentType, long sizeBytes) {
+    }
+
+    /** Looks up a file by its public download token; a malformed or unknown token is a 404. */
+    private StoredFile findByToken(String token) {
+        UUID uuid;
+        try {
+            uuid = UUID.fromString(token);
+        } catch (IllegalArgumentException e) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Lien invalide");
+        }
+        return fileRepository.findByDownloadToken(uuid)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Lien invalide"));
     }
 
     /** Deletes a file the user owns: physical bytes first, then the metadata row. */

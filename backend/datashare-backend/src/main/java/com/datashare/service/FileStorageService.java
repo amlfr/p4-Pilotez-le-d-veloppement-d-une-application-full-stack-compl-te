@@ -1,11 +1,14 @@
 package com.datashare.service;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -23,6 +26,28 @@ public class FileStorageService {
             Files.createDirectories(root);
         } catch (IOException e) {
             throw new IllegalStateException("Impossible de créer le répertoire de stockage: " + root, e);
+        }
+    }
+
+    /**
+     * Loads the physical file for streaming. A missing or unreadable file maps to 410 Gone,
+     * matching the download contract (the metadata row outlived its bytes).
+     */
+    public Resource load(String storedName) {
+        Path target = root.resolve(storedName).normalize();
+        if (!target.startsWith(root)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Chemin de fichier invalide");
+        }
+        try {
+            Resource resource = new UrlResource(target.toUri());
+            if (!resource.exists() || !resource.isReadable()) {
+                throw new ResponseStatusException(
+                        HttpStatus.GONE, "Le fichier a expiré ou a été supprimé");
+            }
+            return resource;
+        } catch (MalformedURLException e) {
+            throw new ResponseStatusException(
+                    HttpStatus.INTERNAL_SERVER_ERROR, "Échec de la lecture du fichier");
         }
     }
 

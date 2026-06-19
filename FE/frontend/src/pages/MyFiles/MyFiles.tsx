@@ -1,6 +1,12 @@
 import { useEffect, useState } from "react";
 import { ApiError } from "../../api/auth";
-import { deleteFile, listMyFiles, type FileListItem } from "../../api/files";
+import {
+  buildShareLink,
+  deleteFile,
+  listMyFiles,
+  tokenFromDownloadUrl,
+  type FileListItem,
+} from "../../api/files";
 import { useAuthStore } from "../../store/auth";
 import { Button, SpaceLayout } from "../../components";
 import styles from "./MyFiles.module.css";
@@ -92,7 +98,8 @@ export default function MyFiles() {
 
   const handleCopy = async (item: FileListItem) => {
     try {
-      await navigator.clipboard.writeText(item.download_url);
+      const link = buildShareLink(tokenFromDownloadUrl(item.download_url));
+      await navigator.clipboard.writeText(link);
       setCopiedId(item.id);
       setTimeout(() => setCopiedId(null), 2000);
     } catch {

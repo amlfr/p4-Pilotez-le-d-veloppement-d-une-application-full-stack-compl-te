@@ -1,3 +1,4 @@
+export { default as Download } from "./Download/Download";
 export { default as Home } from "./Home/Home";
 export { default as Login } from "./Login/Login";
 export { default as MyFiles } from "./MyFiles/MyFiles";
