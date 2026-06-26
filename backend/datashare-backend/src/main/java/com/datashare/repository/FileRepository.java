@@ -1,5 +1,7 @@
 package com.datashare.repository;
 
+import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -17,6 +19,9 @@ import com.datashare.entity.User;
 public interface FileRepository extends JpaRepository<StoredFile, UUID> {
 
     Optional<StoredFile> findByDownloadToken(UUID downloadToken);
+
+    /** All files whose expiration has passed — the daily purge target (US10). */
+    List<StoredFile> findByExpirationDateBefore(Instant cutoff);
 
     Page<StoredFile> findByOwner(User owner, Pageable pageable);
 
