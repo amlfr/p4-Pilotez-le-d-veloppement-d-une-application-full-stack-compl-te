@@ -2,6 +2,8 @@ package com.datashare.service;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
@@ -22,6 +24,7 @@ import org.springframework.web.server.ResponseStatusException;
 import com.datashare.dto.FileListItem;
 import com.datashare.dto.FileListResponse;
 import com.datashare.dto.FileMetadata;
+import com.datashare.dto.TagsResponse;
 import com.datashare.dto.UploadResponse;
 import com.datashare.entity.StoredFile;
 import com.datashare.entity.User;
@@ -37,6 +40,7 @@ public class FileService {
     private static final long MAX_BYTES = 1024L * 1024 * 1024; // 1 Go
     private static final int DEFAULT_EXPIRY_DAYS = 7;
     private static final int MIN_PASSWORD_LENGTH = 6;
+    private static final int MAX_TAG_LENGTH = 30;
 
     private final UserRepository userRepository;
     private final FileRepository fileRepository;
@@ -63,13 +67,14 @@ public class FileService {
      * @param email the authenticated user's email (the JWT subject)
      */
     public UploadResponse upload(
-            MultipartFile file, Integer expiresInDays, String password, String email) {
+            MultipartFile file, Integer expiresInDays, String password, List<String> rawTags, String email) {
 
         User owner = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.UNAUTHORIZED, "Authentification requise"));
 
         validate(file, expiresInDays, password);
+        List<String> tags = normalizeTags(rawTags);
 
         int days = expiresInDays == null ? DEFAULT_EXPIRY_DAYS : expiresInDays;
         UUID token = UUID.randomUUID();
@@ -86,14 +91,18 @@ public class FileService {
                 .downloadToken(token)
                 .uploadDate(now)
                 .expirationDate(now.plus(days, ChronoUnit.DAYS))
+                .tags(tags)
                 .build();
 
         StoredFile saved = fileRepository.save(stored);
         return new UploadResponse(saved.getId(), downloadUrl(token), token, saved.getExpirationDate());
     }
 
-    /** Paginated history of the user's uploads, newest first (OpenAPI: GET /me/files). */
-    public FileListResponse listFiles(int page, int perPage, String email) {
+    /**
+     * Paginated history of the user's uploads, newest first (OpenAPI: GET /me/files).
+     * An optional {@code tag} narrows the list to files carrying that label (US08).
+     */
+    public FileListResponse listFiles(int page, int perPage, String tag, String email) {
         User owner = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.UNAUTHORIZED, "Authentification requise"));
@@ -102,9 +111,11 @@ public class FileService {
         int safePerPage = Math.clamp(perPage, 1, 50);
 
         // The spec's page is 1-based, Spring's PageRequest is 0-based.
-        Page<StoredFile> result = fileRepository.findByOwner(
-                owner,
-                PageRequest.of(safePage - 1, safePerPage, Sort.by(Sort.Direction.DESC, "uploadDate")));
+        PageRequest pageable = PageRequest.of(
+                safePage - 1, safePerPage, Sort.by(Sort.Direction.DESC, "uploadDate"));
+        Page<StoredFile> result = (tag == null || tag.isBlank())
+                ? fileRepository.findByOwner(owner, pageable)
+                : fileRepository.findByOwnerAndTag(owner, tag.trim(), pageable);
 
         List<FileListItem> items = result.getContent().stream()
                 .map(this::toListItem)
@@ -173,14 +184,62 @@ public class FileService {
         StoredFile file = fileRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND, "Fichier introuvable"));
+        requireOwner(file, email);
 
+        storage.delete(file.getStoredName());
+        fileRepository.delete(file);
+    }
+
+    /**
+     * Replaces a file's tags wholesale (OpenAPI: PATCH /files/{id}/tags). 404 if unknown,
+     * 403 for another user's file, 422 on a too-long tag or a duplicate.
+     */
+    public TagsResponse updateTags(UUID id, List<String> rawTags, String email) {
+        StoredFile file = fileRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "Fichier introuvable"));
+        requireOwner(file, email);
+
+        List<String> tags = normalizeTags(rawTags);
+        file.setTags(tags);
+        fileRepository.save(file);
+        return new TagsResponse(tags);
+    }
+
+    private void requireOwner(StoredFile file, String email) {
         if (file.getOwner() == null || !email.equals(file.getOwner().getEmail())) {
             throw new ResponseStatusException(
                     HttpStatus.FORBIDDEN, "Ce fichier appartient à un autre utilisateur");
         }
+    }
 
-        storage.delete(file.getStoredName());
-        fileRepository.delete(file);
+    /**
+     * Trims tags, drops blanks, and rejects over-long (&gt;30 chars) or duplicate labels
+     * (case-insensitive) with a 422 — matching the OpenAPI tag rules.
+     */
+    private List<String> normalizeTags(List<String> raw) {
+        if (raw == null) {
+            return new ArrayList<>();
+        }
+        List<String> cleaned = new ArrayList<>();
+        Set<String> seen = new HashSet<>();
+        for (String candidate : raw) {
+            if (candidate == null) {
+                continue;
+            }
+            String tag = candidate.trim();
+            if (tag.isEmpty()) {
+                continue;
+            }
+            if (tag.length() > MAX_TAG_LENGTH) {
+                throw unprocessable("Un tag ne peut pas dépasser 30 caractères");
+            }
+            if (!seen.add(tag.toLowerCase(Locale.ROOT))) {
+                throw unprocessable("Les tags ne peuvent pas comporter de doublon");
+            }
+            cleaned.add(tag);
+        }
+        return cleaned;
     }
 
     private FileListItem toListItem(StoredFile file) {
@@ -192,7 +251,7 @@ public class FileService {
                 file.getExpirationDate(),
                 file.getExpirationDate().isBefore(Instant.now()),
                 downloadUrl(file.getDownloadToken()),
-                List.of(), // tags arrive with the Tags feature
+                List.copyOf(file.getTags()),
                 file.getPassword() != null);
     }
 

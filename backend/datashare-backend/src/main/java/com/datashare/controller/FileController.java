@@ -2,6 +2,7 @@ package com.datashare.controller;
 
 import java.nio.charset.StandardCharsets;
 import java.security.Principal;
+import java.util.List;
 import java.util.UUID;
 
 import org.springframework.core.io.Resource;
@@ -12,8 +13,10 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -21,6 +24,8 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.datashare.dto.FileMetadata;
+import com.datashare.dto.TagsRequest;
+import com.datashare.dto.TagsResponse;
 import com.datashare.dto.UploadResponse;
 import com.datashare.service.FileService;
 
@@ -40,8 +45,9 @@ public class FileController {
             @RequestParam("file") MultipartFile file,
             @RequestParam(value = "expires_in_days", required = false) Integer expiresInDays,
             @RequestParam(value = "password", required = false) String password,
+            @RequestParam(value = "tags", required = false) List<String> tags,
             Principal principal) {
-        return fileService.upload(file, expiresInDays, password, principal.getName());
+        return fileService.upload(file, expiresInDays, password, tags, principal.getName());
     }
 
     /** File details before downloading — public (OpenAPI: GET /files/{token}). */
@@ -72,5 +78,14 @@ public class FileController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(@PathVariable UUID id, Principal principal) {
         fileService.deleteFile(id, principal.getName());
+    }
+
+    /** Replace a file's tags, owner only (OpenAPI: PATCH /files/{id}/tags). */
+    @PatchMapping("/{id}/tags")
+    public TagsResponse updateTags(
+            @PathVariable UUID id,
+            @RequestBody TagsRequest request,
+            Principal principal) {
+        return fileService.updateTags(id, request.tags(), principal.getName());
     }
 }

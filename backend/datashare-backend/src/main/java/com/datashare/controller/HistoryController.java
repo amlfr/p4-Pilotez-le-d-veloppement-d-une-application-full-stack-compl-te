@@ -22,7 +22,8 @@ public class HistoryController {
     public FileListResponse listMyFiles(
             @RequestParam(value = "page", defaultValue = "1") int page,
             @RequestParam(value = "per_page", defaultValue = "20") int perPage,
+            @RequestParam(value = "tag", required = false) String tag,
             Principal principal) {
-        return fileService.listFiles(page, perPage, principal.getName());
+        return fileService.listFiles(page, perPage, tag, principal.getName());
     }
 }

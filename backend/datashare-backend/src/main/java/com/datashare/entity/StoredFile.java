@@ -1,11 +1,15 @@
 package com.datashare.entity;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 import org.hibernate.annotations.UuidGenerator;
 
+import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
@@ -67,4 +71,12 @@ public class StoredFile {
 
     @Column(nullable = false)
     private Instant expirationDate;
+
+    // Free-text labels (US08), 0..N per file, stored in a side table `file_tags`.
+    // EAGER so history listing has them without an extra round-trip per row.
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "file_tags", joinColumns = @JoinColumn(name = "file_id"))
+    @Column(name = "tag", length = 30)
+    @Builder.Default
+    private List<String> tags = new ArrayList<>();
 }
