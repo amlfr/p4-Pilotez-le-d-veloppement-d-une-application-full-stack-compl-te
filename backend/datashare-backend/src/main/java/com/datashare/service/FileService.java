@@ -69,9 +69,7 @@ public class FileService {
     public UploadResponse upload(
             MultipartFile file, Integer expiresInDays, String password, List<String> rawTags, String email) {
 
-        User owner = userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.UNAUTHORIZED, "Authentification requise"));
+        User owner = requireUser(email);
 
         validate(file, expiresInDays, password);
         List<String> tags = normalizeTags(rawTags);
@@ -103,9 +101,7 @@ public class FileService {
      * An optional {@code tag} narrows the list to files carrying that label (US08).
      */
     public FileListResponse listFiles(int page, int perPage, String tag, String email) {
-        User owner = userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.UNAUTHORIZED, "Authentification requise"));
+        User owner = requireUser(email);
 
         int safePage = Math.max(page, 1);
         int safePerPage = Math.clamp(perPage, 1, 50);
@@ -204,6 +200,13 @@ public class FileService {
         file.setTags(tags);
         fileRepository.save(file);
         return new TagsResponse(tags);
+    }
+
+    /** Resolves the authenticated user by email (the JWT subject), or 401 if unknown. */
+    private User requireUser(String email) {
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.UNAUTHORIZED, "Authentification requise"));
     }
 
     private void requireOwner(StoredFile file, String email) {

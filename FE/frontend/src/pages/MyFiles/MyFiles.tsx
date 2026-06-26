@@ -8,7 +8,7 @@ import {
   type FileListItem,
 } from "../../api/files";
 import { useAuthStore } from "../../store/auth";
-import { Button, SpaceLayout } from "../../components";
+import { Button, FileIcon, SpaceLayout } from "../../components";
 import styles from "./MyFiles.module.css";
 
 type Filter = "tous" | "actifs" | "expires";
@@ -18,25 +18,6 @@ const FILTERS: { value: Filter; label: string }[] = [
   { value: "actifs", label: "Actifs" },
   { value: "expires", label: "Expirés" },
 ];
-
-function FileIcon() {
-  return (
-    <svg
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-      <path d="M14 2v6h6" />
-    </svg>
-  );
-}
 
 function LockIcon() {
   return (

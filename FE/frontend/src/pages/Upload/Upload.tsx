@@ -11,7 +11,14 @@ import { ApiError } from '../../api/auth';
 import { buildShareLink, uploadFile, type UploadResponse } from '../../api/files';
 import { useAuthStore } from '../../store/auth';
 import { clearPendingFile, peekPendingFile } from '../../store/pendingUpload';
-import { Button, CloudButton, InputField, SelectField } from '../../components';
+import {
+  Button,
+  CloudButton,
+  FileIcon,
+  InputField,
+  SelectField,
+} from '../../components';
+import { formatSize } from '../../utils/format';
 import styles from './Upload.module.css';
 
 const MAX_SIZE_BYTES = 1024 ** 3; // 1 Go, same limit as the backend
@@ -25,38 +32,6 @@ const FORBIDDEN_EXTENSIONS = [
   '.vbs',
   '.cmd',
 ];
-
-function FileIcon() {
-  return (
-    <svg
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-      <path d="M14 2v6h6" />
-    </svg>
-  );
-}
-
-function formatSize(bytes: number): string {
-  const units = ['o', 'Ko', 'Mo', 'Go'];
-  let value = bytes;
-  let unit = 0;
-  while (value >= 1024 && unit < units.length - 1) {
-    value /= 1024;
-    unit += 1;
-  }
-  const rounded =
-    unit === 0 ? String(value) : value.toFixed(1).replace(/\.0$/, '');
-  return `${rounded.replace('.', ',')} ${units[unit]}`;
-}
 
 function validateFile(file: File): string {
   if (file.size > MAX_SIZE_BYTES) {
