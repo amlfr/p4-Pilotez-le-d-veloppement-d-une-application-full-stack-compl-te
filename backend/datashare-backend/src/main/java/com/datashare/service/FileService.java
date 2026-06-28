@@ -62,17 +62,20 @@ public class FileService {
     }
 
     /**
-     * Stores an uploaded file for an authenticated user and returns its download token.
+     * Stores an uploaded file and returns its download token.
      *
-     * @param email the authenticated user's email (the JWT subject)
+     * @param email the authenticated user's email (the JWT subject), or {@code null}
+     *              for an anonymous upload (US07) — the file is then owner-less
      */
     public UploadResponse upload(
             MultipartFile file, Integer expiresInDays, String password, List<String> rawTags, String email) {
 
-        User owner = requireUser(email);
+        // US07: an anonymous upload has no authenticated user — owner stays null.
+        User owner = email == null ? null : requireUser(email);
 
         validate(file, expiresInDays, password);
-        List<String> tags = normalizeTags(rawTags);
+        // Tags are reserved to connected users (US08); ignore any sent anonymously.
+        List<String> tags = owner == null ? new ArrayList<>() : normalizeTags(rawTags);
 
         int days = expiresInDays == null ? DEFAULT_EXPIRY_DAYS : expiresInDays;
         UUID token = UUID.randomUUID();

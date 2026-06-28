@@ -38,7 +38,8 @@ public class FileController {
 
     private final FileService fileService;
 
-    /** Upload a file for the authenticated user (OpenAPI: POST /files). */
+    /** Upload a file (OpenAPI: POST /files). Authenticated → owned by the user;
+     * anonymous → owner-less (US07). {@code principal} is null when no JWT is sent. */
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public UploadResponse upload(
@@ -47,7 +48,8 @@ public class FileController {
             @RequestParam(value = "password", required = false) String password,
             @RequestParam(value = "tags", required = false) List<String> tags,
             Principal principal) {
-        return fileService.upload(file, expiresInDays, password, tags, principal.getName());
+        String email = principal != null ? principal.getName() : null;
+        return fileService.upload(file, expiresInDays, password, tags, email);
     }
 
     /** File details before downloading — public (OpenAPI: GET /files/{token}). */

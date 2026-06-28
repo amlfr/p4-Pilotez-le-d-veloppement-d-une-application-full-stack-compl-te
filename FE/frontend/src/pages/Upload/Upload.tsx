@@ -5,8 +5,8 @@ import {
   type ChangeEvent,
   type DragEvent,
   type FormEvent,
+  type KeyboardEvent,
 } from 'react';
-import { Navigate } from 'react-router';
 import { ApiError } from '../../api/auth';
 import { buildShareLink, uploadFile, type UploadResponse } from '../../api/files';
 import { useAuthStore } from '../../store/auth';
@@ -22,6 +22,7 @@ import { formatSize } from '../../utils/format';
 import styles from './Upload.module.css';
 
 const MAX_SIZE_BYTES = 1024 ** 3; // 1 Go, same limit as the backend
+const MAX_TAG_LENGTH = 30; // same limit as the backend (US08)
 const FORBIDDEN_EXTENSIONS = [
   '.exe',
   '.bat',
@@ -66,16 +67,16 @@ export default function Upload() {
   const [password, setPassword] = useState('');
   const [passwordError, setPasswordError] = useState('');
   const [expiresInDays, setExpiresInDays] = useState(7);
+  const [tags, setTags] = useState<string[]>([]);
+  const [tagInput, setTagInput] = useState('');
+  const [tagError, setTagError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [result, setResult] = useState<UploadResponse | null>(null);
   const [copied, setCopied] = useState(false);
 
-  // Redundant with the RequireAuth route guard, but keeps TypeScript's
-  // narrowing of `token` for the calls below.
-  if (!token) {
-    return <Navigate to="/" replace />;
-  }
+  // US07: upload is open to anonymous visitors, so `token` may be null here.
+  const isLoggedIn = token !== null;
 
   const selectFile = (selected: File) => {
     setFile(selected);
@@ -107,6 +108,37 @@ export default function Upload() {
     setError('');
   };
 
+  // Tag rules mirror the backend: trimmed, non-empty, <= 30 chars, no
+  // case-insensitive duplicates (US08).
+  const addTag = () => {
+    const tag = tagInput.trim();
+    if (!tag) return;
+    if (tag.length > MAX_TAG_LENGTH) {
+      setTagError('Un tag ne peut pas dépasser 30 caractères');
+      return;
+    }
+    if (tags.some((existing) => existing.toLowerCase() === tag.toLowerCase())) {
+      setTagError('Ce tag est déjà ajouté');
+      return;
+    }
+    setTags([...tags, tag]);
+    setTagInput('');
+    setTagError('');
+  };
+
+  const handleTagKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'Enter' || event.key === ',') {
+      event.preventDefault();
+      addTag();
+    } else if (event.key === 'Backspace' && !tagInput && tags.length) {
+      setTags(tags.slice(0, -1));
+    }
+  };
+
+  const removeTag = (target: string) => {
+    setTags(tags.filter((tag) => tag !== target));
+  };
+
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
     if (!file || fileError || submitting) return;
@@ -119,7 +151,12 @@ export default function Upload() {
     try {
       const response = await uploadFile(
         file,
-        { expiresInDays, password: password || undefined },
+        {
+          expiresInDays,
+          password: password || undefined,
+          // Tags are a connected-user feature (US08); skip them when anonymous.
+          tags: isLoggedIn ? tags : undefined,
+        },
         token,
       );
       setResult(response);
@@ -225,6 +262,43 @@ export default function Upload() {
                 </option>
               ))}
             </SelectField>
+            {isLoggedIn && (
+            <div className={styles.tagField}>
+              <label className={styles.tagLabel} htmlFor="tag-input">
+                Tags (optionnel)
+              </label>
+              <div className={styles.tagBox}>
+                {tags.map((tag) => (
+                  <span key={tag} className={styles.tagChip}>
+                    {tag}
+                    <button
+                      type="button"
+                      className={styles.tagRemove}
+                      aria-label={`Retirer le tag ${tag}`}
+                      onClick={() => removeTag(tag)}
+                    >
+                      ×
+                    </button>
+                  </span>
+                ))}
+                <input
+                  id="tag-input"
+                  className={styles.tagInput}
+                  type="text"
+                  placeholder={tags.length ? '' : 'Ajoutez un tag puis Entrée...'}
+                  value={tagInput}
+                  maxLength={MAX_TAG_LENGTH}
+                  onChange={(e) => {
+                    setTagInput(e.target.value);
+                    setTagError('');
+                  }}
+                  onKeyDown={handleTagKeyDown}
+                  onBlur={addTag}
+                />
+              </div>
+              {tagError && <p className={styles.tagError}>{tagError}</p>}
+            </div>
+            )}
           </div>
           {error && <p className={styles.error}>{error}</p>}
           <Button

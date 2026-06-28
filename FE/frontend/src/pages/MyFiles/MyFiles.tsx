@@ -149,6 +149,15 @@ export default function MyFiles() {
                   >
                     {expiryLabel(item)}
                   </span>
+                  {item.tags.length > 0 && (
+                    <span className={styles.tags}>
+                      {item.tags.map((tag) => (
+                        <span key={tag} className={styles.tag}>
+                          {tag}
+                        </span>
+                      ))}
+                    </span>
+                  )}
                 </div>
                 <div className={styles.actions}>
                   {item.password_protected && (

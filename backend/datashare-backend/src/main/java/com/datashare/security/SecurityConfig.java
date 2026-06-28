@@ -32,9 +32,12 @@ public class SecurityConfig {
                         // sendError() is re-evaluated as anonymous and turned into a 403.
                         .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
                         .requestMatchers("/api/auth/**").permitAll()
-                        // Public download by link: metadata + file bytes (US02). Upload (POST)
-                        // and delete (DELETE) on /api/files stay authenticated.
+                        // Public download by link: metadata + file bytes (US02).
                         .requestMatchers(HttpMethod.GET, "/api/files/*", "/api/files/*/download").permitAll()
+                        // Anonymous upload (US07): POST /api/files is public. An authenticated
+                        // request still carries its JWT, so the file gets an owner. DELETE and
+                        // PATCH (tags) on /api/files/* remain authenticated.
+                        .requestMatchers(HttpMethod.POST, "/api/files").permitAll()
                         .anyRequest().authenticated())
                 // Unauthenticated requests get the contract's 401 ErrorResponse, not a bare 403.
                 .exceptionHandling(handling -> handling

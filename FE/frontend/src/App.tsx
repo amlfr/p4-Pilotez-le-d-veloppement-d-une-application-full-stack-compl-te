@@ -27,9 +27,8 @@ function App() {
         <Route path="/register" element={<Register />} />
         {/* Public recipient page: anyone with the link can view + download (US02). */}
         <Route path="/d/:token" element={<Download />} />
-        <Route element={<RequireAuth />}>
-          <Route path="/upload" element={<Upload />} />
-        </Route>
+        {/* Public: anonymous visitors can upload too (US07). */}
+        <Route path="/upload" element={<Upload />} />
       </Route>
       <Route element={<RequireAuth />}>
         <Route path="/files" element={<MyFiles />} />

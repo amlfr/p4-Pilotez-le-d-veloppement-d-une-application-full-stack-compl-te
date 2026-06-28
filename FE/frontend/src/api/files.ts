@@ -90,12 +90,13 @@ export async function deleteFile(id: string, authToken: string): Promise<void> {
 export interface UploadOptions {
   expiresInDays: number;
   password?: string;
+  tags?: string[];
 }
 
 export async function uploadFile(
   file: File,
   options: UploadOptions,
-  authToken: string,
+  authToken?: string | null,
 ): Promise<UploadResponse> {
   const form = new FormData();
   form.append("file", file);
@@ -103,11 +104,18 @@ export async function uploadFile(
   if (options.password) {
     form.append("password", options.password);
   }
+  // One repeated "tags" field per tag — the backend reads them as a List (US08).
+  options.tags?.forEach((tag) => form.append("tags", tag));
 
   // No Content-Type header: the browser sets the multipart boundary itself.
+  // No Authorization when anonymous (US07) — the upload is then owner-less.
+  const headers: Record<string, string> = {};
+  if (authToken) {
+    headers.Authorization = `Bearer ${authToken}`;
+  }
   const response = await fetch("/api/files", {
     method: "POST",
-    headers: { Authorization: `Bearer ${authToken}` },
+    headers,
     body: form,
   });
 

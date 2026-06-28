@@ -95,6 +95,22 @@
   color: #c00;
 }
 
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.tag {
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  background: var(--color-accent-bg);
+  color: var(--color-accent-dark);
+  font-size: 12px;
+  line-height: 16px;
+}
+
 .actions {
   display: flex;
   align-items: center;
