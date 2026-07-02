@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router";
-import { ApiError, decodeToken, register } from "../../api/auth";
+import { decodeToken, register } from "../../api/auth";
+import { ApiError } from "../../api/client";
 import { useAuthStore } from "../../store/auth";
 import { AuthCard, Button, InputField } from "../../components";
 

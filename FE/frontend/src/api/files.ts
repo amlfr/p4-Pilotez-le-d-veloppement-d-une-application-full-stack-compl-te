@@ -1,4 +1,4 @@
-import { toApiError } from "./auth";
+import { apiFetch } from "./client";
 
 export interface UploadResponse {
   id: string;
@@ -41,51 +41,33 @@ export function buildShareLink(token: string): string {
 }
 
 /** File details shown before download (US02). 404 if the token is unknown or expired. */
-export async function getFileMetadata(token: string): Promise<FileMetadata> {
-  const response = await fetch(`/api/files/${token}`);
-  if (!response.ok) {
-    throw await toApiError(response);
-  }
-  return response.json();
+export function getFileMetadata(token: string): Promise<FileMetadata> {
+  return apiFetch<FileMetadata>(`/api/files/${token}`);
 }
 
 /**
  * Fetches the file bytes. The password goes in the X-File-Password header — never
  * the URL, which gets logged — URL-encoded so accents survive (the backend decodes).
  */
-export async function fetchFileBlob(
-  token: string,
-  password?: string,
-): Promise<Blob> {
-  const headers: Record<string, string> = {};
-  if (password) {
-    headers["X-File-Password"] = encodeURIComponent(password);
-  }
-  const response = await fetch(`/api/files/${token}/download`, { headers });
-  if (!response.ok) {
-    throw await toApiError(response);
-  }
-  return response.blob();
-}
-
-export async function listMyFiles(authToken: string): Promise<FileListResponse> {
-  const response = await fetch("/api/me/files", {
-    headers: { Authorization: `Bearer ${authToken}` },
+export function fetchFileBlob(token: string, password?: string): Promise<Blob> {
+  return apiFetch<Blob>(`/api/files/${token}/download`, {
+    headers: password
+      ? { "X-File-Password": encodeURIComponent(password) }
+      : undefined,
+    parse: "blob",
   });
-  if (!response.ok) {
-    throw await toApiError(response);
-  }
-  return response.json();
 }
 
-export async function deleteFile(id: string, authToken: string): Promise<void> {
-  const response = await fetch(`/api/files/${id}`, {
+export function listMyFiles(authToken: string): Promise<FileListResponse> {
+  return apiFetch<FileListResponse>("/api/me/files", { token: authToken });
+}
+
+export function deleteFile(id: string, authToken: string): Promise<void> {
+  return apiFetch<void>(`/api/files/${id}`, {
     method: "DELETE",
-    headers: { Authorization: `Bearer ${authToken}` },
+    token: authToken,
+    parse: "none",
   });
-  if (!response.ok) {
-    throw await toApiError(response);
-  }
 }
 
 export interface UploadOptions {
@@ -94,7 +76,7 @@ export interface UploadOptions {
   tags?: string[];
 }
 
-export async function uploadFile(
+export function uploadFile(
   file: File,
   options: UploadOptions,
   authToken?: string | null,
@@ -108,21 +90,9 @@ export async function uploadFile(
   // One repeated "tags" field per tag — the backend reads them as a List (US08).
   options.tags?.forEach((tag) => form.append("tags", tag));
 
-  // No Content-Type header: the browser sets the multipart boundary itself.
-  // No Authorization when anonymous (US07) — the upload is then owner-less.
-  const headers: Record<string, string> = {};
-  if (authToken) {
-    headers.Authorization = `Bearer ${authToken}`;
-  }
-  const response = await fetch("/api/files", {
+  return apiFetch<UploadResponse>("/api/files", {
     method: "POST",
-    headers,
-    body: form,
+    form,
+    token: authToken,
   });
-
-  if (!response.ok) {
-    throw await toApiError(response);
-  }
-
-  return response.json();
 }

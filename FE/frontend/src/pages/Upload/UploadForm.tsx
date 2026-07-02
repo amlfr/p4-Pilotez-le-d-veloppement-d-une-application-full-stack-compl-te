@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { ApiError } from "../../api/auth";
+import { ApiError } from "../../api/client";
 import { uploadFile, type UploadResponse } from "../../api/files";
 import { useAuthStore } from "../../store/auth";
 import {

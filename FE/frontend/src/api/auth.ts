@@ -1,3 +1,5 @@
+import { apiFetch } from "./client";
+
 export interface AuthResponse {
   id: string;
   email: string;
@@ -9,60 +11,24 @@ export interface TokenResponse {
   expires_in: number;
 }
 
-interface ErrorBody {
-  status: number;
-  error: string;
-  message: string;
-  timestamp: string;
-}
-
-export class ApiError extends Error {
-  status: number;
-
-  constructor(status: number, message: string) {
-    super(message);
-    this.status = status;
-  }
-}
-
 /** Decodes the JWT payload (no verification — display purposes only). */
 export function decodeToken(token: string): {
   sub: string;
   name?: string;
   userId?: string;
 } {
-  const payload = token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
-  return JSON.parse(atob(payload));
-}
-
-/** Builds an ApiError from a failed response (OpenAPI ErrorResponse body). */
-export async function toApiError(response: Response): Promise<ApiError> {
-  let message = `Erreur ${response.status}`;
-  try {
-    const data = (await response.json()) as ErrorBody;
-    if (data.message) message = data.message;
-  } catch {
-    // Non-JSON error body; keep the generic message.
-  }
-  return new ApiError(response.status, message);
-}
-
-async function post<T>(path: string, body: unknown): Promise<T> {
-  const response = await fetch(path, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
-
-  if (!response.ok) {
-    throw await toApiError(response);
-  }
-
-  return response.json();
+  const base64 = token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
+  // atob alone garbles UTF-8 (it decodes to Latin-1), so accented names
+  // like "Léa" need a real UTF-8 decode of the raw bytes.
+  const bytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
+  return JSON.parse(new TextDecoder().decode(bytes));
 }
 
 export function login(email: string, password: string): Promise<TokenResponse> {
-  return post("/api/auth/login", { email, password });
+  return apiFetch<TokenResponse>("/api/auth/login", {
+    method: "POST",
+    json: { email, password },
+  });
 }
 
 export function register(
@@ -70,5 +36,8 @@ export function register(
   email: string,
   password: string,
 ): Promise<AuthResponse> {
-  return post("/api/auth/register", { name, email, password });
+  return apiFetch<AuthResponse>("/api/auth/register", {
+    method: "POST",
+    json: { name, email, password },
+  });
 }

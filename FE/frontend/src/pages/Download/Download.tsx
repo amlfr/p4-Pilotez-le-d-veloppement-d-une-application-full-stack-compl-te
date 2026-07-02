@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { useParams } from 'react-router';
-import { ApiError } from '../../api/auth';
+import { ApiError } from '../../api/client';
 import {
   fetchFileBlob,
   getFileMetadata,
