@@ -15,6 +15,7 @@ export interface FileListItem {
   expires_at: string;
   is_expired: boolean;
   download_url: string;
+  token: string;
   tags: string[];
   password_protected: boolean;
 }
@@ -39,12 +40,6 @@ export function buildShareLink(token: string): string {
   return `${window.location.origin}/d/${token}`;
 }
 
-/** Pulls the bare token out of a backend download_url (".../files/{token}/download"). */
-export function tokenFromDownloadUrl(url: string): string {
-  const match = /\/files\/([^/]+)\/download/.exec(url);
-  return match ? match[1] : url;
-}
-
 /** File details shown before download (US02). 404 if the token is unknown or expired. */
 export async function getFileMetadata(token: string): Promise<FileMetadata> {
   const response = await fetch(`/api/files/${token}`);
@@ -54,13 +49,21 @@ export async function getFileMetadata(token: string): Promise<FileMetadata> {
   return response.json();
 }
 
-/** Fetches the file bytes. Sends the password when the file is protected. */
+/**
+ * Fetches the file bytes. The password travels in the X-File-Password header —
+ * never in the URL, which ends up in server logs and browser history. It is
+ * URL-encoded so accented characters survive HTTP's Latin-1 header restriction
+ * (the backend decodes it).
+ */
 export async function fetchFileBlob(
   token: string,
   password?: string,
 ): Promise<Blob> {
-  const query = password ? `?password=${encodeURIComponent(password)}` : "";
-  const response = await fetch(`/api/files/${token}/download${query}`);
+  const headers: Record<string, string> = {};
+  if (password) {
+    headers["X-File-Password"] = encodeURIComponent(password);
+  }
+  const response = await fetch(`/api/files/${token}/download`, { headers });
   if (!response.ok) {
     throw await toApiError(response);
   }

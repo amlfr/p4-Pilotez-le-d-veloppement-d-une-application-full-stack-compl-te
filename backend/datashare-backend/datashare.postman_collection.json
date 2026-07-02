@@ -527,13 +527,13 @@
           "name": "Download protected (wrong password → 401)",
           "request": {
             "method": "GET",
+            "header": [{ "key": "X-File-Password", "value": "totally-wrong" }],
             "url": {
-              "raw": "{{baseUrl}}/api/files/{{protectedToken}}/download?password=totally-wrong",
+              "raw": "{{baseUrl}}/api/files/{{protectedToken}}/download",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "files", "{{protectedToken}}", "download"],
-              "query": [{ "key": "password", "value": "totally-wrong" }]
+              "path": ["api", "files", "{{protectedToken}}", "download"]
             },
-            "description": "Negative test (UnauthorizedException): a wrong password is 401 'Mot de passe incorrect'."
+            "description": "Negative test (UnauthorizedException): a wrong password is 401 'Mot de passe incorrect'. The password travels in the X-File-Password header, never the URL."
           },
           "event": [
             {
@@ -554,13 +554,13 @@
           "name": "Download protected (correct password → 200)",
           "request": {
             "method": "GET",
+            "header": [{ "key": "X-File-Password", "value": "{{filePassword}}" }],
             "url": {
-              "raw": "{{baseUrl}}/api/files/{{protectedToken}}/download?password={{filePassword}}",
+              "raw": "{{baseUrl}}/api/files/{{protectedToken}}/download",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "files", "{{protectedToken}}", "download"],
-              "query": [{ "key": "password", "value": "{{filePassword}}" }]
+              "path": ["api", "files", "{{protectedToken}}", "download"]
             },
-            "description": "With the right password the protected file streams back normally."
+            "description": "With the right password (X-File-Password header) the protected file streams back normally."
           },
           "event": [
             {

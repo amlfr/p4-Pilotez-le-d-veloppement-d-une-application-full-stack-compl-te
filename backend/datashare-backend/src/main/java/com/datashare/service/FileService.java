@@ -9,7 +9,6 @@ import java.util.Locale;
 import java.util.Set;
 import java.util.UUID;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -27,43 +26,40 @@ import com.datashare.dto.UploadResponse;
 import com.datashare.entity.StoredFile;
 import com.datashare.entity.User;
 import com.datashare.exception.FileGoneException;
-import com.datashare.exception.FileTooLargeException;
 import com.datashare.exception.ForbiddenException;
-import com.datashare.exception.ForbiddenFileTypeException;
 import com.datashare.exception.ResourceNotFoundException;
 import com.datashare.exception.UnauthorizedException;
 import com.datashare.exception.ValidationException;
+import com.datashare.mapper.FileMapper;
 import com.datashare.repository.FileRepository;
 import com.datashare.repository.UserRepository;
 
 @Service
 public class FileService {
 
-    // Executable types refused by the contract (415).
-    private static final Set<String> FORBIDDEN_EXTENSIONS =
-            Set.of("exe", "bat", "sh", "ps1", "msi", "dll", "vbs", "cmd");
-    private static final long MAX_BYTES = 1024L * 1024 * 1024; // 1 Go
     private static final int DEFAULT_EXPIRY_DAYS = 7;
-    private static final int MIN_PASSWORD_LENGTH = 6;
     private static final int MAX_TAG_LENGTH = 30;
 
     private final UserRepository userRepository;
     private final FileRepository fileRepository;
     private final StorageService storage;
     private final PasswordEncoder passwordEncoder;
-    private final String baseUrl;
+    private final FileMapper mapper;
+    private final FileUploadValidator validator;
 
     public FileService(
             UserRepository userRepository,
             FileRepository fileRepository,
             StorageService storage,
             PasswordEncoder passwordEncoder,
-            @Value("${datashare.base-url}") String baseUrl) {
+            FileMapper mapper,
+            FileUploadValidator validator) {
         this.userRepository = userRepository;
         this.fileRepository = fileRepository;
         this.storage = storage;
         this.passwordEncoder = passwordEncoder;
-        this.baseUrl = baseUrl;
+        this.mapper = mapper;
+        this.validator = validator;
     }
 
     /**
@@ -78,7 +74,7 @@ public class FileService {
         // US07: an anonymous upload has no authenticated user — owner stays null.
         User owner = email == null ? null : requireUser(email);
 
-        validate(file, expiresInDays, password);
+        validator.validate(file, expiresInDays, password);
         // Tags are reserved to connected users (US08); ignore any sent anonymously.
         List<String> tags = owner == null ? new ArrayList<>() : normalizeTags(rawTags);
 
@@ -101,7 +97,7 @@ public class FileService {
                 .build();
 
         StoredFile saved = fileRepository.save(stored);
-        return new UploadResponse(saved.getId(), downloadUrl(token), token, saved.getExpirationDate());
+        return mapper.toUploadResponse(saved);
     }
 
     /**
@@ -122,7 +118,7 @@ public class FileService {
                 : fileRepository.findByOwnerAndTag(owner, tag.trim(), pageable);
 
         List<FileListItem> items = result.getContent().stream()
-                .map(this::toListItem)
+                .map(mapper::toListItem)
                 .toList();
         return new FileListResponse(items, result.getTotalElements(), safePage, safePerPage);
     }
@@ -136,12 +132,7 @@ public class FileService {
         if (file.getExpirationDate().isBefore(Instant.now())) {
             throw new ResourceNotFoundException("Lien invalide ou expiré");
         }
-        return new FileMetadata(
-                file.getOriginalName(),
-                file.getSizeBytes(),
-                file.getContentType(),
-                file.getExpirationDate(),
-                file.getPassword() != null);
+        return mapper.toMetadata(file);
     }
 
     /**
@@ -248,47 +239,11 @@ public class FileService {
         return cleaned;
     }
 
-    private FileListItem toListItem(StoredFile file) {
-        return new FileListItem(
-                file.getId(),
-                file.getOriginalName(),
-                file.getSizeBytes(),
-                file.getUploadDate(),
-                file.getExpirationDate(),
-                file.getExpirationDate().isBefore(Instant.now()),
-                downloadUrl(file.getDownloadToken()),
-                List.copyOf(file.getTags()),
-                file.getPassword() != null);
-    }
-
-    private void validate(MultipartFile file, Integer expiresInDays, String password) {
-        if (file == null || file.isEmpty()) {
-            throw new ValidationException("Le fichier est vide ou manquant");
-        }
-        if (file.getSize() > MAX_BYTES) {
-            throw new FileTooLargeException("La taille des fichiers est limitée à 1 Go");
-        }
-        if (FORBIDDEN_EXTENSIONS.contains(extension(file.getOriginalFilename()))) {
-            throw new ForbiddenFileTypeException("Ce type de fichier n'est pas autorisé");
-        }
-        if (expiresInDays != null && (expiresInDays < 1 || expiresInDays > 7)) {
-            throw new ValidationException("La durée de conservation doit être comprise entre 1 et 7 jours");
-        }
-        if (password != null && !password.isBlank() && password.length() < MIN_PASSWORD_LENGTH) {
-            throw new ValidationException("Le mot de passe doit contenir au moins 6 caractères");
-        }
-    }
-
     private String hashPassword(String password) {
         if (password == null || password.isBlank()) {
             return null;
         }
         return passwordEncoder.encode(password);
-    }
-
-    private String downloadUrl(UUID token) {
-        String base = baseUrl.endsWith("/") ? baseUrl.substring(0, baseUrl.length() - 1) : baseUrl;
-        return base + "/api/files/" + token + "/download";
     }
 
     private String resolveContentType(MultipartFile file) {
@@ -305,13 +260,5 @@ public class FileService {
         }
         String cleaned = StringUtils.getFilename(StringUtils.cleanPath(original));
         return cleaned == null || cleaned.isBlank() ? "fichier" : cleaned;
-    }
-
-    private String extension(String filename) {
-        if (filename == null) {
-            return "";
-        }
-        int dot = filename.lastIndexOf('.');
-        return dot == -1 ? "" : filename.substring(dot + 1).toLowerCase(Locale.ROOT);
     }
 }

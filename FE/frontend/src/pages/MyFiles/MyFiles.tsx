@@ -4,7 +4,6 @@ import {
   buildShareLink,
   deleteFile,
   listMyFiles,
-  tokenFromDownloadUrl,
   type FileListItem,
 } from "../../api/files";
 import { useAuthStore } from "../../store/auth";
@@ -79,7 +78,7 @@ export default function MyFiles() {
 
   const handleCopy = async (item: FileListItem) => {
     try {
-      const link = buildShareLink(tokenFromDownloadUrl(item.download_url));
+      const link = buildShareLink(item.token);
       await navigator.clipboard.writeText(link);
       setCopiedId(item.id);
       setTimeout(() => setCopiedId(null), 2000);

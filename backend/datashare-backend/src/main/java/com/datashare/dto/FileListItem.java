@@ -15,6 +15,9 @@ public record FileListItem(
         @JsonProperty("expires_at") Instant expiresAt,
         @JsonProperty("is_expired") boolean isExpired,
         @JsonProperty("download_url") String downloadUrl,
+        // The bare download token, so the FE can build its share link (/d/{token})
+        // without having to parse it back out of download_url.
+        UUID token,
         List<String> tags,
         // Extra property (not in the spec): the UI shows a lock on protected files.
         @JsonProperty("password_protected") boolean passwordProtected

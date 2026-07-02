@@ -1,5 +1,6 @@
 package com.datashare.controller;
 
+import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.security.Principal;
 import java.util.List;
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -59,12 +61,13 @@ public class FileController {
     }
 
     /** Download the file bytes — public, password required if the file is protected
-     * (OpenAPI: GET /files/{token}/download). */
+     * (OpenAPI: GET /files/{token}/download). The password travels in the
+     * X-File-Password header, never in the URL (query strings end up in access logs). */
     @GetMapping("/{token}/download")
     public ResponseEntity<Resource> download(
             @PathVariable String token,
-            @RequestParam(value = "password", required = false) String password) {
-        FileService.DownloadResult result = fileService.download(token, password);
+            @RequestHeader(value = "X-File-Password", required = false) String password) {
+        FileService.DownloadResult result = fileService.download(token, decodePassword(password));
         ContentDisposition disposition = ContentDisposition.attachment()
                 .filename(result.filename(), StandardCharsets.UTF_8)
                 .build();
@@ -89,5 +92,21 @@ public class FileController {
             @RequestBody TagsRequest request,
             Principal principal) {
         return fileService.updateTags(id, request.tags(), principal.getName());
+    }
+
+    /**
+     * The client URL-encodes the X-File-Password header so non-ASCII passwords survive
+     * HTTP's Latin-1 header restriction. A value that is not valid percent-encoding is
+     * used as-is (it will simply fail the password check).
+     */
+    private String decodePassword(String raw) {
+        if (raw == null) {
+            return null;
+        }
+        try {
+            return URLDecoder.decode(raw, StandardCharsets.UTF_8);
+        } catch (IllegalArgumentException e) {
+            return raw;
+        }
     }
 }
