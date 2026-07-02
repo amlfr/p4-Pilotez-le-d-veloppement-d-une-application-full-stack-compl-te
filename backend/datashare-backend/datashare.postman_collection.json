@@ -1,14 +1,44 @@
 {
   "info": {
     "name": "Datashare API",
-    "description": "Auth endpoints for the Datashare backend (Spring Boot, localhost:8080).\n\nUsage:\n1. Run **Auth > Register** to create the test account (uses the {{testEmail}} / {{testPassword}} variables).\n2. Run **Auth > Login** — its test script saves the returned JWT into the {{jwt}} collection variable.\n3. Any protected request (see the 'Protected (future)' folder) then sends `Authorization: Bearer {{jwt}}` automatically.\n\nEdit the collection variables (baseUrl / testEmail / testPassword) under the collection's Variables tab.",
+    "description": "Full API tests for the Datashare backend (Spring Boot, localhost:8080), including the error paths served by the domain exceptions (DatashareException hierarchy).\n\nUsage:\n1. Start the backend, then run the collection with the Collection Runner in folder order (Auth → Files – upload → Files – download → My files & tags → Ownership & delete).\n2. Every request in 'Files – upload' needs a file selected in its form-data `file` field (any small file; the 415 test needs an .exe/.bat). Postman does not store file paths in the collection, so pick them once before running.\n3. Auth > Register/Login save the JWT into {{jwt}}; upload requests save {{fileId}}/{{fileToken}} etc. for the later folders.\n\nA collection-level test asserts that EVERY error response (status >= 400) has the OpenAPI ErrorResponse shape {status, error, message, timestamp}.\n\nEdit baseUrl / testEmail / testPassword under the collection's Variables tab.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
     { "key": "baseUrl", "value": "http://localhost:8080", "type": "string" },
     { "key": "testEmail", "value": "test@datashare.local", "type": "string" },
+    { "key": "testEmailB", "value": "test-b@datashare.local", "type": "string" },
     { "key": "testPassword", "value": "secret123", "type": "string" },
-    { "key": "jwt", "value": "", "type": "string" }
+    { "key": "filePassword", "value": "secret6chars", "type": "string" },
+    { "key": "jwt", "value": "", "type": "string" },
+    { "key": "jwtB", "value": "", "type": "string" },
+    { "key": "fileId", "value": "", "type": "string" },
+    { "key": "fileToken", "value": "", "type": "string" },
+    { "key": "protectedId", "value": "", "type": "string" },
+    { "key": "protectedToken", "value": "", "type": "string" },
+    { "key": "anonId", "value": "", "type": "string" },
+    { "key": "anonToken", "value": "", "type": "string" }
+  ],
+  "event": [
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Contract check shared by every request: any error must use the OpenAPI",
+          "// ErrorResponse shape {status, error, message, timestamp}.",
+          "if (pm.response.code >= 400) {",
+          "  pm.test('error body has the ErrorResponse shape', function () {",
+          "    var e = pm.response.json();",
+          "    pm.expect(e.status).to.eql(pm.response.code);",
+          "    pm.expect(e.error).to.be.a('string').and.not.empty;",
+          "    pm.expect(e.message).to.be.a('string').and.not.empty;",
+          "    pm.expect(e.timestamp).to.be.a('string').and.not.empty;",
+          "  });",
+          "}"
+        ]
+      }
+    }
   ],
   "item": [
     {
@@ -18,9 +48,7 @@
           "name": "Register",
           "request": {
             "method": "POST",
-            "header": [
-              { "key": "Content-Type", "value": "application/json" }
-            ],
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "url": {
               "raw": "{{baseUrl}}/api/auth/register",
               "host": ["{{baseUrl}}"],
@@ -30,7 +58,7 @@
               "mode": "raw",
               "raw": "{\n  \"name\": \"Test User\",\n  \"email\": \"{{testEmail}}\",\n  \"password\": \"{{testPassword}}\"\n}"
             },
-            "description": "Creates a new account. 201 with {id,email,token} (auto-login per OpenAPI spec); 409 if the email is already registered; 422 on validation failure (password < 8 chars)."
+            "description": "Creates the test account. 201 with {id,email,token} (auto-login per spec); 409 if it already exists from a previous run; 422 on validation failure (password < 8 chars)."
           },
           "event": [
             {
@@ -56,12 +84,41 @@
           ]
         },
         {
+          "name": "Register (duplicate email → 409)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "register"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{testEmail}}\",\n  \"password\": \"{{testPassword}}\"\n}"
+            },
+            "description": "Negative test (EmailAlreadyUsedException): registering the same email twice must return 409 'Cet email est déjà utilisé'. Run right after Register."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 409', function () { pm.response.to.have.status(409); });",
+                  "pm.test('French duplicate-email message', function () {",
+                  "  pm.expect(pm.response.json().message).to.eql('Cet email est déjà utilisé');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
           "name": "Login",
           "request": {
             "method": "POST",
-            "header": [
-              { "key": "Content-Type", "value": "application/json" }
-            ],
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "url": {
               "raw": "{{baseUrl}}/api/auth/login",
               "host": ["{{baseUrl}}"],
@@ -71,7 +128,7 @@
               "mode": "raw",
               "raw": "{\n  \"email\": \"{{testEmail}}\",\n  \"password\": \"{{testPassword}}\"\n}"
             },
-            "description": "Validates credentials and returns a signed JWT. 200 with {token,expires_in}; 401 on bad credentials. Login is by email."
+            "description": "Validates credentials and returns a signed JWT. 200 with {token,expires_in}; the test script saves the token into {{jwt}} for the protected requests."
           },
           "event": [
             {
@@ -83,10 +140,7 @@
                   "var json = pm.response.json();",
                   "pm.test('returns a token', function () { pm.expect(json.token).to.be.a('string').and.not.empty; });",
                   "pm.test('returns expires_in', function () { pm.expect(json.expires_in).to.be.a('number'); });",
-                  "if (json.token) {",
-                  "  pm.collectionVariables.set('jwt', json.token);",
-                  "  console.log('Saved JWT to {{jwt}}');",
-                  "}"
+                  "if (json.token) { pm.collectionVariables.set('jwt', json.token); }"
                 ]
               }
             }
@@ -96,9 +150,7 @@
           "name": "Login (bad credentials → 401)",
           "request": {
             "method": "POST",
-            "header": [
-              { "key": "Content-Type", "value": "application/json" }
-            ],
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "url": {
               "raw": "{{baseUrl}}/api/auth/login",
               "host": ["{{baseUrl}}"],
@@ -108,7 +160,466 @@
               "mode": "raw",
               "raw": "{\n  \"email\": \"{{testEmail}}\",\n  \"password\": \"wrong-password\"\n}"
             },
-            "description": "Negative test: wrong password must return 401 without revealing whether the email exists."
+            "description": "Negative test (UnauthorizedException): wrong password must return 401 without revealing whether the email exists."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 401', function () { pm.response.to.have.status(401); });",
+                  "pm.test('non-revealing message', function () {",
+                  "  pm.expect(pm.response.json().message).to.eql('Email ou mot de passe incorrect');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Files – upload",
+      "description": "POST /api/files (multipart). Select a small file in each request's `file` field before running; the 415 request needs a forbidden extension (.exe, .bat…).",
+      "item": [
+        {
+          "name": "Upload (authenticated, with tags)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{jwt}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/files",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "files"]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "file", "type": "file", "src": [] },
+                { "key": "expires_in_days", "value": "7", "type": "text" },
+                { "key": "tags", "value": "cours", "type": "text" },
+                { "key": "tags", "value": "projet", "type": "text" }
+              ]
+            },
+            "description": "Happy path: 201 with {id, download_url, token, expires_at}. Saves {{fileId}} and {{fileToken}} for the download/tags/delete folders."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 201', function () { pm.response.to.have.status(201); });",
+                  "var json = pm.response.json();",
+                  "pm.test('returns id, download_url, token, expires_at', function () {",
+                  "  pm.expect(json).to.have.property('id');",
+                  "  pm.expect(json.download_url).to.be.a('string').and.not.empty;",
+                  "  pm.expect(json.token).to.be.a('string').and.not.empty;",
+                  "  pm.expect(json.expires_at).to.be.a('string').and.not.empty;",
+                  "});",
+                  "pm.collectionVariables.set('fileId', json.id);",
+                  "pm.collectionVariables.set('fileToken', json.token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Upload (password-protected)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{jwt}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/files",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "files"]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "file", "type": "file", "src": [] },
+                { "key": "expires_in_days", "value": "7", "type": "text" },
+                { "key": "password", "value": "{{filePassword}}", "type": "text" }
+              ]
+            },
+            "description": "US09: uploads a file protected by {{filePassword}}. Saves {{protectedId}}/{{protectedToken}} for the 401 download tests."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 201', function () { pm.response.to.have.status(201); });",
+                  "var json = pm.response.json();",
+                  "pm.collectionVariables.set('protectedId', json.id);",
+                  "pm.collectionVariables.set('protectedToken', json.token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Upload (anonymous)",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/files",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "files"]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "file", "type": "file", "src": [] },
+                { "key": "expires_in_days", "value": "1", "type": "text" }
+              ]
+            },
+            "description": "US07: no Authorization header — the upload succeeds owner-less. Saves {{anonId}}/{{anonToken}} (the owner-less delete test expects 403 on it)."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 201', function () { pm.response.to.have.status(201); });",
+                  "var json = pm.response.json();",
+                  "pm.collectionVariables.set('anonId', json.id);",
+                  "pm.collectionVariables.set('anonToken', json.token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Upload (retention out of range → 422)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{jwt}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/files",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "files"]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "file", "type": "file", "src": [] },
+                { "key": "expires_in_days", "value": "99", "type": "text" }
+              ]
+            },
+            "description": "Negative test (ValidationException): expires_in_days must be 1..7. With a file selected the message is the retention one; without one, the 'file missing' 422 fires first — either way the status is 422."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 422', function () { pm.response.to.have.status(422); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Upload (file password too short → 422)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{jwt}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/files",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "files"]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "file", "type": "file", "src": [] },
+                { "key": "password", "value": "abc", "type": "text" }
+              ]
+            },
+            "description": "Negative test (ValidationException): a download password shorter than 6 characters is refused with 422."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 422', function () { pm.response.to.have.status(422); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Upload (forbidden extension → 415)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{jwt}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/files",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "files"]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "file", "type": "file", "src": [] }
+              ]
+            },
+            "description": "Negative test (ForbiddenFileTypeException): SELECT AN .exe/.bat/.sh FILE for this one. Expected: 415 'Ce type de fichier n'est pas autorisé'."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 415', function () { pm.response.to.have.status(415); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Files – download",
+      "description": "Public metadata + download endpoints (US02), including the password gate (US09).",
+      "item": [
+        {
+          "name": "Metadata",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/files/{{fileToken}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "files", "{{fileToken}}"]
+            },
+            "description": "Public file details before download: {original_name, size_bytes, mime_type, expires_at, password_protected}."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+                  "var json = pm.response.json();",
+                  "pm.test('metadata shape', function () {",
+                  "  pm.expect(json.original_name).to.be.a('string');",
+                  "  pm.expect(json.size_bytes).to.be.a('number');",
+                  "  pm.expect(json.mime_type).to.be.a('string');",
+                  "  pm.expect(json.expires_at).to.be.a('string');",
+                  "  pm.expect(json.password_protected).to.eql(false);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Metadata (unknown token → 404)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/files/11111111-2222-3333-4444-555555555555",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "files", "11111111-2222-3333-4444-555555555555"]
+            },
+            "description": "Negative test (ResourceNotFoundException): a well-formed but unknown token is 404 'Lien invalide'."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 404', function () { pm.response.to.have.status(404); });",
+                  "pm.test('French message', function () {",
+                  "  pm.expect(pm.response.json().message).to.eql('Lien invalide');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Metadata (malformed token → 404)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/files/not-a-uuid",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "files", "not-a-uuid"]
+            },
+            "description": "Negative test (ResourceNotFoundException): a malformed token must be a clean 404, not a 400/500."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 404', function () { pm.response.to.have.status(404); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Download",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/files/{{fileToken}}/download",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "files", "{{fileToken}}", "download"]
+            },
+            "description": "Public download of the unprotected file: 200 with the bytes and a Content-Disposition attachment header."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('attachment header present', function () {",
+                  "  pm.expect(pm.response.headers.get('Content-Disposition')).to.include('attachment');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Download protected (no password → 401)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/files/{{protectedToken}}/download",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "files", "{{protectedToken}}", "download"]
+            },
+            "description": "Negative test (UnauthorizedException): downloading a protected file without ?password= is 401 'Mot de passe requis'."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 401', function () { pm.response.to.have.status(401); });",
+                  "pm.test('French message', function () {",
+                  "  pm.expect(pm.response.json().message).to.eql('Mot de passe requis');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Download protected (wrong password → 401)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/files/{{protectedToken}}/download?password=totally-wrong",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "files", "{{protectedToken}}", "download"],
+              "query": [{ "key": "password", "value": "totally-wrong" }]
+            },
+            "description": "Negative test (UnauthorizedException): a wrong password is 401 'Mot de passe incorrect'."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 401', function () { pm.response.to.have.status(401); });",
+                  "pm.test('French message', function () {",
+                  "  pm.expect(pm.response.json().message).to.eql('Mot de passe incorrect');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Download protected (correct password → 200)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/files/{{protectedToken}}/download?password={{filePassword}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "files", "{{protectedToken}}", "download"],
+              "query": [{ "key": "password", "value": "{{filePassword}}" }]
+            },
+            "description": "With the right password the protected file streams back normally."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "My files & tags",
+      "item": [
+        {
+          "name": "My files",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{jwt}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/me/files",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "me", "files"]
+            },
+            "description": "Paginated upload history, newest first: {data, total, page, per_page}."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+                  "var json = pm.response.json();",
+                  "pm.test('list shape', function () {",
+                  "  pm.expect(json.data).to.be.an('array');",
+                  "  pm.expect(json.total).to.be.a('number');",
+                  "  pm.expect(json.page).to.eql(1);",
+                  "  pm.expect(json.per_page).to.be.a('number');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "My files (no token → 401)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/me/files",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "me", "files"]
+            },
+            "description": "Negative test (JsonAuthenticationEntryPoint): a protected endpoint without a JWT is 401 'Authentification requise' in the ErrorResponse shape."
           },
           "event": [
             {
@@ -121,27 +632,350 @@
               }
             }
           ]
+        },
+        {
+          "name": "Update tags",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/files/{{fileId}}/tags",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "files", "{{fileId}}", "tags"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tags\": [\"remplacé\", \"postman\"]\n}"
+            },
+            "description": "US08: full replacement of the file's tags. 200 with the normalized list."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('tags replaced', function () {",
+                  "  pm.expect(pm.response.json().tags).to.eql(['remplacé', 'postman']);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update tags (case-insensitive duplicate → 422)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/files/{{fileId}}/tags",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "files", "{{fileId}}", "tags"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tags\": [\"cours\", \"COURS\"]\n}"
+            },
+            "description": "Negative test (ValidationException): duplicates are rejected case-insensitively with 422."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 422', function () { pm.response.to.have.status(422); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update tags (over 30 chars → 422)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/files/{{fileId}}/tags",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "files", "{{fileId}}", "tags"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tags\": [\"ce-tag-fait-beaucoup-plus-de-trente-caracteres\"]\n}"
+            },
+            "description": "Negative test (ValidationException): a tag longer than 30 characters is 422."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 422', function () { pm.response.to.have.status(422); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update tags (unknown file → 404)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/files/11111111-2222-3333-4444-555555555555/tags",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "files", "11111111-2222-3333-4444-555555555555", "tags"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tags\": [\"x\"]\n}"
+            },
+            "description": "Negative test (ResourceNotFoundException): 404 'Fichier introuvable' on an unknown file id."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 404', function () { pm.response.to.have.status(404); });",
+                  "pm.test('French message', function () {",
+                  "  pm.expect(pm.response.json().message).to.eql('Fichier introuvable');",
+                  "});"
+                ]
+              }
+            }
+          ]
         }
       ]
     },
     {
-      "name": "Protected (future)",
-      "description": "Placeholder requests for the upcoming File API. They send the captured JWT via the JwtAuthenticationFilter. They will 404 until the endpoints exist — kept here so the auth wiring is ready to use.",
+      "name": "Ownership & delete",
+      "description": "Runs last: exercises the 403 ownership guard with a second account, then deletes the test files. The anonymous file cannot be deleted (owner-less → 403); the daily purge removes it at expiry.",
       "item": [
         {
-          "name": "Example authenticated request",
+          "name": "Register user B",
           "request": {
-            "method": "GET",
-            "header": [
-              { "key": "Authorization", "value": "Bearer {{jwt}}" }
-            ],
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "url": {
-              "raw": "{{baseUrl}}/api/files",
+              "raw": "{{baseUrl}}/api/auth/register",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "files"]
+              "path": ["api", "auth", "register"]
             },
-            "description": "Sample protected call. Demonstrates sending `Authorization: Bearer {{jwt}}`. Expect 404 today (no File API yet); will be guarded by JwtAuthenticationFilter once File endpoints land — a missing/invalid token then yields 401."
-          }
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"User B\",\n  \"email\": \"{{testEmailB}}\",\n  \"password\": \"{{testPassword}}\"\n}"
+            },
+            "description": "Second account used to prove a user cannot touch someone else's file."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 201 (or 409 if already registered)', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([201, 409]);",
+                  "});",
+                  "if (pm.response.code === 201) {",
+                  "  pm.collectionVariables.set('jwtB', pm.response.json().token);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login user B",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{testEmailB}}\",\n  \"password\": \"{{testPassword}}\"\n}"
+            },
+            "description": "Ensures {{jwtB}} is set even when Register B returned 409 on a re-run."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.collectionVariables.set('jwtB', pm.response.json().token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delete someone else's file (→ 403)",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{jwtB}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/files/{{fileId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "files", "{{fileId}}"]
+            },
+            "description": "Negative test (ForbiddenException): user B deleting user A's file is 403 'Ce fichier appartient à un autre utilisateur'."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 403', function () { pm.response.to.have.status(403); });",
+                  "pm.test('French message', function () {",
+                  "  pm.expect(pm.response.json().message).to.eql('Ce fichier appartient à un autre utilisateur');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delete anonymous file (owner-less → 403)",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{jwt}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/files/{{anonId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "files", "{{anonId}}"]
+            },
+            "description": "Negative test (ForbiddenException): an anonymous upload has no owner, so nobody can delete it through the API."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 403', function () { pm.response.to.have.status(403); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delete (no token → 401)",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/api/files/{{fileId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "files", "{{fileId}}"]
+            },
+            "description": "Negative test (JsonAuthenticationEntryPoint): DELETE stays authenticated — without a JWT it is 401."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 401', function () { pm.response.to.have.status(401); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delete (owner → 204)",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{jwt}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/files/{{fileId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "files", "{{fileId}}"]
+            },
+            "description": "The owner deletes their file: 204 No Content, bytes and metadata both removed."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 204', function () { pm.response.to.have.status(204); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delete again (→ 404)",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{jwt}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/files/{{fileId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "files", "{{fileId}}"]
+            },
+            "description": "Negative test (ResourceNotFoundException): deleting the same file twice is 404 'Fichier introuvable'."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 404', function () { pm.response.to.have.status(404); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delete protected file (cleanup → 204)",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{jwt}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/files/{{protectedId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "files", "{{protectedId}}"]
+            },
+            "description": "Cleanup: removes the password-protected test file."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 204', function () { pm.response.to.have.status(204); });"
+                ]
+              }
+            }
+          ]
         }
       ]
     }

@@ -9,10 +9,11 @@ import java.nio.file.Paths;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.server.ResponseStatusException;
+
+import com.datashare.exception.FileGoneException;
+import com.datashare.exception.StorageException;
 
 /** Reads and writes the physical file bytes under a configured storage directory. */
 @Service
@@ -30,24 +31,22 @@ public class FileStorageService {
     }
 
     /**
-     * Loads the physical file for streaming. A missing or unreadable file maps to 410 Gone,
-     * matching the download contract (the metadata row outlived its bytes).
+     * Loads the physical file for streaming. A missing or unreadable file is signalled as
+     * "gone", matching the download contract (the metadata row outlived its bytes).
      */
     public Resource load(String storedName) {
         Path target = root.resolve(storedName).normalize();
         if (!target.startsWith(root)) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Chemin de fichier invalide");
+            throw new StorageException("Chemin de fichier invalide");
         }
         try {
             Resource resource = new UrlResource(target.toUri());
             if (!resource.exists() || !resource.isReadable()) {
-                throw new ResponseStatusException(
-                        HttpStatus.GONE, "Le fichier a expiré ou a été supprimé");
+                throw new FileGoneException("Le fichier a expiré ou a été supprimé");
             }
             return resource;
         } catch (MalformedURLException e) {
-            throw new ResponseStatusException(
-                    HttpStatus.INTERNAL_SERVER_ERROR, "Échec de la lecture du fichier");
+            throw new StorageException("Échec de la lecture du fichier");
         }
     }
 
@@ -60,8 +59,7 @@ public class FileStorageService {
         try {
             Files.deleteIfExists(target);
         } catch (IOException e) {
-            throw new ResponseStatusException(
-                    HttpStatus.INTERNAL_SERVER_ERROR, "Échec de la suppression du fichier");
+            throw new StorageException("Échec de la suppression du fichier");
         }
     }
 
@@ -70,14 +68,13 @@ public class FileStorageService {
         Path target = root.resolve(storedName).normalize();
         // Defence in depth: storedName is a generated UUID, but never let a write escape root.
         if (!target.startsWith(root)) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Chemin de fichier invalide");
+            throw new StorageException("Chemin de fichier invalide");
         }
         try {
             file.transferTo(target);
             return target;
         } catch (IOException e) {
-            throw new ResponseStatusException(
-                    HttpStatus.INTERNAL_SERVER_ERROR, "Échec de l'enregistrement du fichier");
+            throw new StorageException("Échec de l'enregistrement du fichier");
         }
     }
 }

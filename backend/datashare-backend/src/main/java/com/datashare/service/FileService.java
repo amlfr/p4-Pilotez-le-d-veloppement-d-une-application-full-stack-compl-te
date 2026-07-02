@@ -14,12 +14,10 @@ import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.server.ResponseStatusException;
 
 import com.datashare.dto.FileListItem;
 import com.datashare.dto.FileListResponse;
@@ -28,6 +26,13 @@ import com.datashare.dto.TagsResponse;
 import com.datashare.dto.UploadResponse;
 import com.datashare.entity.StoredFile;
 import com.datashare.entity.User;
+import com.datashare.exception.FileGoneException;
+import com.datashare.exception.FileTooLargeException;
+import com.datashare.exception.ForbiddenException;
+import com.datashare.exception.ForbiddenFileTypeException;
+import com.datashare.exception.ResourceNotFoundException;
+import com.datashare.exception.UnauthorizedException;
+import com.datashare.exception.ValidationException;
 import com.datashare.repository.FileRepository;
 import com.datashare.repository.UserRepository;
 
@@ -129,7 +134,7 @@ public class FileService {
     public FileMetadata getMetadata(String token) {
         StoredFile file = findByToken(token);
         if (file.getExpirationDate().isBefore(Instant.now())) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Lien invalide ou expiré");
+            throw new ResourceNotFoundException("Lien invalide ou expiré");
         }
         return new FileMetadata(
                 file.getOriginalName(),
@@ -146,15 +151,14 @@ public class FileService {
     public DownloadResult download(String token, String password) {
         StoredFile file = findByToken(token);
         if (file.getExpirationDate().isBefore(Instant.now())) {
-            throw new ResponseStatusException(
-                    HttpStatus.GONE, "Le fichier a expiré ou a été supprimé");
+            throw new FileGoneException("Le fichier a expiré ou a été supprimé");
         }
         if (file.getPassword() != null) {
             if (password == null || password.isBlank()) {
-                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Mot de passe requis");
+                throw new UnauthorizedException("Mot de passe requis");
             }
             if (!passwordEncoder.matches(password, file.getPassword())) {
-                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Mot de passe incorrect");
+                throw new UnauthorizedException("Mot de passe incorrect");
             }
         }
         Resource resource = storage.load(file.getStoredName());
@@ -172,17 +176,16 @@ public class FileService {
         try {
             uuid = UUID.fromString(token);
         } catch (IllegalArgumentException e) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Lien invalide");
+            throw new ResourceNotFoundException("Lien invalide");
         }
         return fileRepository.findByDownloadToken(uuid)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Lien invalide"));
+                .orElseThrow(() -> new ResourceNotFoundException("Lien invalide"));
     }
 
     /** Deletes a file the user owns: physical bytes first, then the metadata row. */
     public void deleteFile(UUID id, String email) {
         StoredFile file = fileRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.NOT_FOUND, "Fichier introuvable"));
+                .orElseThrow(() -> new ResourceNotFoundException("Fichier introuvable"));
         requireOwner(file, email);
 
         storage.delete(file.getStoredName());
@@ -195,8 +198,7 @@ public class FileService {
      */
     public TagsResponse updateTags(UUID id, List<String> rawTags, String email) {
         StoredFile file = fileRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.NOT_FOUND, "Fichier introuvable"));
+                .orElseThrow(() -> new ResourceNotFoundException("Fichier introuvable"));
         requireOwner(file, email);
 
         List<String> tags = normalizeTags(rawTags);
@@ -208,14 +210,12 @@ public class FileService {
     /** Resolves the authenticated user by email (the JWT subject), or 401 if unknown. */
     private User requireUser(String email) {
         return userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.UNAUTHORIZED, "Authentification requise"));
+                .orElseThrow(() -> new UnauthorizedException("Authentification requise"));
     }
 
     private void requireOwner(StoredFile file, String email) {
         if (file.getOwner() == null || !email.equals(file.getOwner().getEmail())) {
-            throw new ResponseStatusException(
-                    HttpStatus.FORBIDDEN, "Ce fichier appartient à un autre utilisateur");
+            throw new ForbiddenException("Ce fichier appartient à un autre utilisateur");
         }
     }
 
@@ -238,10 +238,10 @@ public class FileService {
                 continue;
             }
             if (tag.length() > MAX_TAG_LENGTH) {
-                throw unprocessable("Un tag ne peut pas dépasser 30 caractères");
+                throw new ValidationException("Un tag ne peut pas dépasser 30 caractères");
             }
             if (!seen.add(tag.toLowerCase(Locale.ROOT))) {
-                throw unprocessable("Les tags ne peuvent pas comporter de doublon");
+                throw new ValidationException("Les tags ne peuvent pas comporter de doublon");
             }
             cleaned.add(tag);
         }
@@ -263,21 +263,19 @@ public class FileService {
 
     private void validate(MultipartFile file, Integer expiresInDays, String password) {
         if (file == null || file.isEmpty()) {
-            throw unprocessable("Le fichier est vide ou manquant");
+            throw new ValidationException("Le fichier est vide ou manquant");
         }
         if (file.getSize() > MAX_BYTES) {
-            throw new ResponseStatusException(
-                    HttpStatus.PAYLOAD_TOO_LARGE, "La taille des fichiers est limitée à 1 Go");
+            throw new FileTooLargeException("La taille des fichiers est limitée à 1 Go");
         }
         if (FORBIDDEN_EXTENSIONS.contains(extension(file.getOriginalFilename()))) {
-            throw new ResponseStatusException(
-                    HttpStatus.UNSUPPORTED_MEDIA_TYPE, "Ce type de fichier n'est pas autorisé");
+            throw new ForbiddenFileTypeException("Ce type de fichier n'est pas autorisé");
         }
         if (expiresInDays != null && (expiresInDays < 1 || expiresInDays > 7)) {
-            throw unprocessable("La durée de conservation doit être comprise entre 1 et 7 jours");
+            throw new ValidationException("La durée de conservation doit être comprise entre 1 et 7 jours");
         }
         if (password != null && !password.isBlank() && password.length() < MIN_PASSWORD_LENGTH) {
-            throw unprocessable("Le mot de passe doit contenir au moins 6 caractères");
+            throw new ValidationException("Le mot de passe doit contenir au moins 6 caractères");
         }
     }
 
@@ -315,9 +313,5 @@ public class FileService {
         }
         int dot = filename.lastIndexOf('.');
         return dot == -1 ? "" : filename.substring(dot + 1).toLowerCase(Locale.ROOT);
-    }
-
-    private ResponseStatusException unprocessable(String message) {
-        return new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, message);
     }
 }
