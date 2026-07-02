@@ -7,3 +7,4 @@ export { default as InputField } from "./InputField/InputField";
 export { default as RequireAuth } from "./RequireAuth/RequireAuth";
 export { default as SpaceLayout } from "./SpaceLayout/SpaceLayout";
 export { default as SelectField } from "./SelectField/SelectField";
+export { default as TagInput } from "./TagInput/TagInput";
