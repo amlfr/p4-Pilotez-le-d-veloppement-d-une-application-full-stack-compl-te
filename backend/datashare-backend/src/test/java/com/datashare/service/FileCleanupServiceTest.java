@@ -31,7 +31,7 @@ class FileCleanupServiceTest {
     private FileRepository fileRepository;
 
     @Mock
-    private FileStorageService storage;
+    private StorageService storage;
 
     @InjectMocks
     private FileCleanupService cleanup;

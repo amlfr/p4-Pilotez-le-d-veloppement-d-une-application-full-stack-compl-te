@@ -49,14 +49,14 @@ public class FileService {
 
     private final UserRepository userRepository;
     private final FileRepository fileRepository;
-    private final FileStorageService storage;
+    private final StorageService storage;
     private final PasswordEncoder passwordEncoder;
     private final String baseUrl;
 
     public FileService(
             UserRepository userRepository,
             FileRepository fileRepository,
-            FileStorageService storage,
+            StorageService storage,
             PasswordEncoder passwordEncoder,
             @Value("${datashare.base-url}") String baseUrl) {
         this.userRepository = userRepository;

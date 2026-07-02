@@ -23,9 +23,9 @@ public class FileCleanupService {
     private static final Logger log = LoggerFactory.getLogger(FileCleanupService.class);
 
     private final FileRepository fileRepository;
-    private final FileStorageService storage;
+    private final StorageService storage;
 
-    public FileCleanupService(FileRepository fileRepository, FileStorageService storage) {
+    public FileCleanupService(FileRepository fileRepository, StorageService storage) {
         this.fileRepository = fileRepository;
         this.storage = storage;
     }
