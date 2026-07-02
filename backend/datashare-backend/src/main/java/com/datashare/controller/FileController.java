@@ -61,8 +61,8 @@ public class FileController {
     }
 
     /** Download the file bytes — public, password required if the file is protected
-     * (OpenAPI: GET /files/{token}/download). The password travels in the
-     * X-File-Password header, never in the URL (query strings end up in access logs). */
+     * (OpenAPI: GET /files/{token}/download). The password comes in the
+     * X-File-Password header so it never shows up in access logs. */
     @GetMapping("/{token}/download")
     public ResponseEntity<Resource> download(
             @PathVariable String token,
@@ -95,9 +95,9 @@ public class FileController {
     }
 
     /**
-     * The client URL-encodes the X-File-Password header so non-ASCII passwords survive
-     * HTTP's Latin-1 header restriction. A value that is not valid percent-encoding is
-     * used as-is (it will simply fail the password check).
+     * The client URL-encodes the password header (headers only carry Latin-1).
+     * A value that isn't valid percent-encoding is used as-is — it will just
+     * fail the password check.
      */
     private String decodePassword(String raw) {
         if (raw == null) {

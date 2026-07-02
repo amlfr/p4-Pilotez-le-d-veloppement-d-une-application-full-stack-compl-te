@@ -6,19 +6,16 @@ import org.springframework.core.io.Resource;
 import org.springframework.web.multipart.MultipartFile;
 
 /**
- * Reads, writes and deletes the physical bytes of an uploaded file, identified by
- * its {@code storedName} (the generated UUID, never the user's filename).
- *
- * <p>Business code depends on this abstraction only (DIP): swapping the local-disk
- * implementation ({@link DiskStorageService}) for another backend (S3, blob store…)
- * would not touch {@code FileService} or the cleanup job.
+ * The physical bytes of an uploaded file, identified by {@code storedName} (the
+ * generated UUID, never the user's filename). Business code only knows this
+ * interface: the disk implementation ({@link DiskStorageService}) could be swapped
+ * for S3 without touching {@code FileService}.
  */
 public interface StorageService {
 
     /**
-     * Loads the physical file for streaming. Missing or unreadable bytes are signalled
-     * with {@link com.datashare.exception.FileGoneException} (the metadata row outlived
-     * its bytes), matching the download contract.
+     * Loads the file for streaming. Missing or unreadable bytes →
+     * {@link com.datashare.exception.FileGoneException} (the metadata row outlived its bytes).
      */
     Resource load(String storedName);
 

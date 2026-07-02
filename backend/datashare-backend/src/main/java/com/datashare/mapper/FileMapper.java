@@ -13,8 +13,8 @@ import com.datashare.dto.UploadResponse;
 import com.datashare.entity.StoredFile;
 
 /**
- * Shapes {@link StoredFile} entities into the DTOs the API returns, including the
- * public download URL (which is presentation, not business logic — hence here).
+ * Turns {@link StoredFile} entities into the DTOs the API returns. The download
+ * URL is built here too — it's presentation, not business logic.
  */
 @Component
 public class FileMapper {

@@ -11,9 +11,8 @@ import com.datashare.exception.ForbiddenFileTypeException;
 import com.datashare.exception.ValidationException;
 
 /**
- * The business rules an upload must satisfy (contract: POST /files): present and
- * non-empty, at most 1 Go, no executable extension, retention within 1..7 days,
- * optional download password of at least 6 characters.
+ * The rules an upload must pass (contract: POST /files): file present, at most
+ * 1 Go, no executable extension, retention 1..7 days, password of 6+ chars if given.
  */
 @Component
 public class FileUploadValidator {

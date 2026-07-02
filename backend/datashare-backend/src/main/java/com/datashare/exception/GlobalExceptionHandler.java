@@ -42,10 +42,7 @@ public class GlobalExceptionHandler {
         return ErrorResponse.of(HttpStatus.PAYLOAD_TOO_LARGE, "La taille des fichiers est limitée à 1 Go");
     }
 
-    /**
-     * Business exceptions thrown by the service layer (link not found, wrong password,
-     * duplicate email…) → the status carried by the exception, in the ErrorResponse shape.
-     */
+    /** Business exceptions → the status the exception carries, in the ErrorResponse shape. */
     @ExceptionHandler(DatashareException.class)
     public ResponseEntity<ErrorResponse> handleDatashare(DatashareException ex) {
         return ResponseEntity.status(ex.getStatus())

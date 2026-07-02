@@ -3,11 +3,9 @@ package com.datashare.exception;
 import org.springframework.http.HttpStatus;
 
 /**
- * Base of all business exceptions. Each subclass names a domain failure
- * (link not found, wrong password, file too large…) and encapsulates the
- * HTTP status the API contract maps it to, so the service layer never
- * manipulates statuses itself — {@link GlobalExceptionHandler} does the
- * translation into the OpenAPI ErrorResponse shape.
+ * Base of every business exception. A subclass names what went wrong (link not
+ * found, wrong password…) and knows which HTTP status that maps to, so services
+ * never deal with HTTP themselves — {@link GlobalExceptionHandler} translates.
  */
 public abstract class DatashareException extends RuntimeException {
 

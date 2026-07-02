@@ -50,10 +50,8 @@ export async function getFileMetadata(token: string): Promise<FileMetadata> {
 }
 
 /**
- * Fetches the file bytes. The password travels in the X-File-Password header —
- * never in the URL, which ends up in server logs and browser history. It is
- * URL-encoded so accented characters survive HTTP's Latin-1 header restriction
- * (the backend decodes it).
+ * Fetches the file bytes. The password goes in the X-File-Password header — never
+ * the URL, which gets logged — URL-encoded so accents survive (the backend decodes).
  */
 export async function fetchFileBlob(
   token: string,
