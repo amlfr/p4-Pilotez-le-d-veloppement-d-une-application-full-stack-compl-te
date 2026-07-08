@@ -12,6 +12,8 @@ export default defineConfig({
     },
   },
   test: {
+    // globals exposes afterEach for @testing-library's automatic DOM cleanup.
+    globals: true,
     environment: 'jsdom',
     setupFiles: './src/setupTests.ts',
     coverage: {
