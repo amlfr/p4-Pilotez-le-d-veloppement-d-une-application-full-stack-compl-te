@@ -12,6 +12,14 @@ dist
 dist-ssr
 *.local
 
+# Cypress (sorties d'exécution)
+cypress/screenshots
+cypress/videos
+cypress/downloads
+
+# Couverture Vitest (rapport généré par `npm run coverage`)
+coverage
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
