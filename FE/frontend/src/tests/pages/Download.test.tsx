@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ApiError } from "../../api/client";
 import { getFileMetadata, type FileMetadata } from "../../api/files";
-import Download from "./Download";
+import Download from "../../pages/Download/Download";
 
 vi.mock("../../api/files", () => ({
   getFileMetadata: vi.fn(),

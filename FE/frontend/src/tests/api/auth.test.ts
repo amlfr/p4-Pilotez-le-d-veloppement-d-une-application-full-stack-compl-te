@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { decodeToken } from "./auth";
+import { decodeToken } from "../../api/auth";
 
 /** Builds an unsigned JWT-shaped token whose payload is base64url-encoded UTF-8. */
 function tokenWithPayload(payload: object): string {

@@ -2,7 +2,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
-import TagInput from "./TagInput";
+import TagInput from "../../components/TagInput/TagInput";
 
 describe("TagInput", () => {
   it("ajoute un tag avec Entrée", async () => {

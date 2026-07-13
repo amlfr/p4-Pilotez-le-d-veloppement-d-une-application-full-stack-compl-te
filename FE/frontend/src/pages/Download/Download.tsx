@@ -44,7 +44,6 @@ export default function Download() {
 
   useEffect(() => {
     let cancelled = false;
-    setLoading(true);
     getFileMetadata(token)
       .then((data) => {
         if (!cancelled) setMeta(data);

@@ -3,7 +3,7 @@ import { MemoryRouter, Route, Routes } from "react-router";
 import { beforeEach, describe, expect, it } from "vitest";
 
 import { useAuthStore } from "../../store/auth";
-import RequireAuth from "./RequireAuth";
+import RequireAuth from "../../components/RequireAuth/RequireAuth";
 
 function renderGuardedRoute() {
   return render(
