@@ -20,26 +20,26 @@ public class GlobalExceptionHandler {
 
     /** @Valid failures → 422 with the OpenAPI ErrorResponse shape. */
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    @ResponseStatus(HttpStatus.UNPROCESSABLE_ENTITY)
+    @ResponseStatus(HttpStatus.UNPROCESSABLE_CONTENT)
     public ErrorResponse handleValidation(MethodArgumentNotValidException ex) {
         String message = ex.getBindingResult().getFieldErrors().stream()
                 .map(error -> error.getField() + ": " + error.getDefaultMessage())
                 .collect(Collectors.joining("; "));
-        return ErrorResponse.of(HttpStatus.UNPROCESSABLE_ENTITY, message);
+        return ErrorResponse.of(HttpStatus.UNPROCESSABLE_CONTENT, message);
     }
 
     /** A multipart upload missing its required `file` part → 422. */
     @ExceptionHandler({MissingServletRequestPartException.class, MissingServletRequestParameterException.class})
-    @ResponseStatus(HttpStatus.UNPROCESSABLE_ENTITY)
+    @ResponseStatus(HttpStatus.UNPROCESSABLE_CONTENT)
     public ErrorResponse handleMissingPart(Exception ex) {
-        return ErrorResponse.of(HttpStatus.UNPROCESSABLE_ENTITY, "Le fichier est requis");
+        return ErrorResponse.of(HttpStatus.UNPROCESSABLE_CONTENT, "Le fichier est requis");
     }
 
     /** Upload exceeding the multipart limit → 413 (the contract's oversize response). */
     @ExceptionHandler(MaxUploadSizeExceededException.class)
-    @ResponseStatus(HttpStatus.PAYLOAD_TOO_LARGE)
+    @ResponseStatus(HttpStatus.CONTENT_TOO_LARGE)
     public ErrorResponse handleMaxSize(MaxUploadSizeExceededException ex) {
-        return ErrorResponse.of(HttpStatus.PAYLOAD_TOO_LARGE, "La taille des fichiers est limitée à 1 Go");
+        return ErrorResponse.of(HttpStatus.CONTENT_TOO_LARGE, "La taille des fichiers est limitée à 1 Go");
     }
 
     /** Business exceptions → the status the exception carries, in the ErrorResponse shape. */

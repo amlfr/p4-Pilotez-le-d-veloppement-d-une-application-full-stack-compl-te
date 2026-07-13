@@ -6,6 +6,6 @@ import org.springframework.http.HttpStatus;
 public class ValidationException extends DatashareException {
 
     public ValidationException(String message) {
-        super(HttpStatus.UNPROCESSABLE_ENTITY, message);
+        super(HttpStatus.UNPROCESSABLE_CONTENT, message);
     }
 }

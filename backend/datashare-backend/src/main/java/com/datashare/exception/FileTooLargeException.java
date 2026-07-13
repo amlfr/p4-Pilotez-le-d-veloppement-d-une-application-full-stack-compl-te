@@ -6,6 +6,6 @@ import org.springframework.http.HttpStatus;
 public class FileTooLargeException extends DatashareException {
 
     public FileTooLargeException(String message) {
-        super(HttpStatus.PAYLOAD_TOO_LARGE, message);
+        super(HttpStatus.CONTENT_TOO_LARGE, message);
     }
 }
