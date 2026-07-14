@@ -1,11 +1,9 @@
 /// <reference types="cypress" />
 
-/**
- * Commandes partagées par les scénarios E2E. Les tests tournent contre la
- * vraie stack locale : Vite (5173) + backend Spring Boot (8080) + PostgreSQL.
- */
+// Commandes partagées. Les E2E tournent contre la vraie stack locale
+// (Vite 5173 + backend 8080 + PostgreSQL).
 
-/** Crée un compte tout neuf (email unique) et arrive connecté sur /files. */
+/** Crée un compte neuf (email unique) et arrive connecté sur /files. */
 Cypress.Commands.add('registerNewUser', () => {
   const email = `e2e-${Date.now()}@test.fr`;
   cy.visit('/register');
@@ -19,10 +17,7 @@ Cypress.Commands.add('registerNewUser', () => {
   return cy.wrap(email);
 });
 
-/**
- * Téléverse un petit fichier texte depuis /upload (rétention 1 jour) et
- * renvoie le lien de partage /d/{token} affiché sur l'écran de succès.
- */
+/** Téléverse un petit fichier texte (rétention 1 jour), renvoie le lien /d/{token}. */
 Cypress.Commands.add(
   'uploadTextFile',
   (fileName: string, options: { password?: string } = {}) => {

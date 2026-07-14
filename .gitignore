@@ -1,4 +1,4 @@
-# Datashare — .gitignore unique du dépôt (backend + frontend).
+# Datashare — backend + frontend.
 
 # ===== Commun =====
 *.log
@@ -12,6 +12,7 @@ logs
 *.njsproj
 *.sln
 *.sw?
+perf
 
 # ===== Backend — Spring Boot / Maven =====
 target/
@@ -20,7 +21,7 @@ target/
 **/.mvn/wrapper/maven-wrapper.jar
 .env
 HELP.md
-# Octets des fichiers téléversés (jamais versionnés)
+# Fichiers téléversés
 uploads/
 
 # IDE Eclipse / STS
@@ -43,7 +44,7 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-# Sorties de tests : Cypress et couverture Vitest (`npm run coverage`)
+# Sorties de tests
 **/cypress/screenshots/
 **/cypress/videos/
 **/cypress/downloads/

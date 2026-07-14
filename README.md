@@ -16,16 +16,33 @@ collection covering every endpoint (happy paths and error cases) is in
 
 ## Running it
 
-You need JDK 21, Node, and a local PostgreSQL with a `datashare` database:
+You need JDK 21, Node, and a local PostgreSQL. Create the database and its schema
+by running the SQL scripts in `backend/datashare-backend/db/`, in order:
 
-```sql
-CREATE DATABASE datashare;
+```bash
+cd backend/datashare-backend
+psql -U postgres -f db/01-create-database.sql          # creates the database
+psql -U postgres -d datashare -f db/02-schema.sql      # creates the tables
 ```
 
-The schema is created automatically on first startup. Database credentials and other
-settings (port, JWT secret, storage directory…) are in
-`backend/datashare-backend/src/main/resources/application.properties` — the defaults
-work for local development.
+Nothing is created automatically: the app checks the schema at startup
+(`ddl-auto=validate`) and won't boot without it. Settings (port, storage
+directory…) are in
+`backend/datashare-backend/src/main/resources/application.properties`; secrets
+are read from the environment and never committed. Locally, copy the template
+and fill it in (the git-ignored `.env` is loaded at startup):
+
+```bash
+cd backend/datashare-backend
+cp .env.example .env      # then set DB_PASSWORD (and a JWT_SECRET)
+```
+
+| Variable      | Purpose                          | Default                    |
+| ------------- | -------------------------------- | -------------------------- |
+| `DB_PASSWORD` | PostgreSQL password (required)   | *(empty)*                  |
+| `DB_USERNAME` | PostgreSQL user                  | `postgres`                 |
+| `DB_URL`      | JDBC URL                         | local `datashare` database |
+| `JWT_SECRET`  | JWT signing key (32+ chars)      | dev-only fallback          |
 
 Backend, from `backend/datashare-backend/`:
 

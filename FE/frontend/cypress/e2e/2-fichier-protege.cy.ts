@@ -1,12 +1,8 @@
 /// <reference types="cypress" />
 
-/**
- * Scénario 2 (US09 + US07) : fichier protégé par mot de passe, téléversé en
- * anonyme — mauvais mot de passe refusé, bon mot de passe télécharge.
- */
+// Scénario 2 (US09 + US07) : fichier protégé, téléversé sans compte.
 describe('Fichier protégé par mot de passe', () => {
   it('refuse un mauvais mot de passe puis télécharge avec le bon', () => {
-    // Pas de connexion : l'upload anonyme (US07) est couvert au passage.
     cy.uploadTextFile('secret-e2e.txt', { password: 'sesame99' }).then(
       (link) => {
         cy.visit(link);

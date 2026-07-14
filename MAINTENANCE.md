@@ -8,28 +8,34 @@
 
 ### Base de données
 
-```sql
-CREATE DATABASE datashare;
--- utilisateur/mot de passe : voir application.properties
+Le schéma se crée à la main, via les scripts de `Code/backend/datashare-backend/db/`
+(identifiants : voir `application.properties`) :
+
+```bash
+cd Code/backend/datashare-backend
+psql -U postgres -f db/01-create-database.sql          # crée la base
+psql -U postgres -d datashare -f db/02-schema.sql      # crée les tables
 ```
 
-Le schéma est créé automatiquement (`spring.jpa.hibernate.ddl-auto=update`).
+L'application tourne en `ddl-auto=validate` : si le schéma ne colle pas aux
+entités, elle refuse de démarrer. Une évolution du modèle = un script SQL dans
+`db/` + l'entité correspondante.
 
 ### Lancement
 
 ```bash
-# Backend
+# Backend (au premier lancement : cp .env.example .env puis remplir DB_PASSWORD)
 cd Code/backend/datashare-backend && ./mvnw.cmd spring-boot:run
 
 # Frontend
 cd Code/FE/frontend && npm install && npm run dev
 ```
 
-### Configuration sensible (à externaliser en production)
+### Configuration sensible (variables d'environnement, jamais commitées)
 
-- `JWT_SECRET` (variable d'environnement)
-- Identifiants PostgreSQL
-- `datashare.storage.location`, `datashare.base-url`
+- `DB_PASSWORD` (obligatoire), `DB_USERNAME`, `DB_URL` — identifiants PostgreSQL
+- `JWT_SECRET` — clé de signature JWT (32 caractères minimum en production)
+- `datashare.storage.location`, `datashare.base-url` — à adapter hors local
 
 ## 2. Procédures de mise à jour des dépendances
 

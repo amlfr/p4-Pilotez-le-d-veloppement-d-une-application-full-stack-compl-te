@@ -1,34 +1,36 @@
 # Plan de tests — DataShare
 
-## 1. Stratégie de test
+## 1. Stratégie
 
-- **Backend** : Spring Boot 4 / JUnit 5 + Mockito (tests unitaires), MockMvc
-  (tests de tranche web) pour les contrôleurs.
-- **Frontend** : Vitest + @testing-library/react (unitaire/intégration),
-  Cypress (end-to-end).
-- **Objectif de couverture** : 80 % minimum.
+- **Backend** : JUnit 5 + Mockito (unitaires), MockMvc sur H2 en mémoire (intégration).
+- **Frontend** : Vitest + Testing Library (unitaires, dans `src/tests/`), Cypress (end-to-end).
+- **Couverture** : objectif 70 %. Mesuré : **92 % back** (JaCoCo), **79 % front** (V8).
+  Rapports HTML archivés dans `Doc/coverage/`.
 
-## 2. Tests unitaires — fonctionnalités obligatoires du MVP
+## 2. Couverture par User Story
 
-Chaque User Story du MVP doit être couverte par au moins un test.
+| US   | Fonctionnalité          | Back                                         | Front / E2E                   |
+| ---- | ----------------------- | -------------------------------------------- | ----------------------------- |
+| US01 | Upload (avec compte)    | `FileUploadValidatorTest`, `FileServiceTest` | `Upload`, `UploadForm`, e2e 1 |
+| US02 | Téléchargement via lien | `FileServiceTest`, `FileApiIntegrationTest`  | `Download`, e2e 1             |
+| US03 | Création de compte      | `AuthServiceTest`, `AuthApiIntegrationTest`  | `Register`, e2e 1             |
+| US04 | Connexion               | `AuthServiceTest`, `JwtServiceTest`          | `Login`                       |
+| US05 | Historique              | `FileServiceTest` (pagination, filtre tag)   | `MyFiles`, e2e 3              |
+| US06 | Suppression             | `FileServiceTest` (403 autre propriétaire)   | `MyFiles`, e2e 3              |
+| US07 | Upload anonyme          | `FileServiceTest` (owner null)               | `UploadForm`, e2e 2           |
+| US08 | Tags                    | `FileServiceTest` (normalisation, doublons)  | `TagInput`, `UploadForm`      |
+| US09 | Mot de passe fichier    | `FileServiceTest`, `FileApiIntegrationTest`  | `Download`, e2e 2             |
+| US10 | Expiration automatique  | `FileCleanupServiceTest`                     | —                             |
 
-| US   | Fonctionnalité          | Test(s)                                             | Statut        |
-| ---- | ----------------------- | --------------------------------------------------- | ------------- |
-| US01 | Upload (avec compte)    | `FileServiceTest` (validation taille/ext/durée/mdp) | _À compléter_ |
-| US02 | Téléchargement via lien | `FileControllerTest` (404 / 410 / 401 / 200)        | _À compléter_ |
-| US03 | Création de compte      | `AuthServiceTest` (email unique, hash mdp)          | _À compléter_ |
-| US04 | Connexion               | `AuthServiceTest` (JWT émis, 401 mauvais mdp)       | _À compléter_ |
-| US05 | Historique              | `HistoryControllerTest` (pagination, propriétaire)  | _À compléter_ |
-| US06 | Suppression             | `FileServiceTest` (403 autre propriétaire, 204)     | _À compléter_ |
-| US10 | Expiration automatique  | `FileCleanupServiceTest` ✅ (2 tests, déjà écrits)  | Fait          |
+Bilan : 64 tests back, 52 tests front, 3 scénarios Cypress.
 
-## 3. Tests end-to-end (Cypress) — scénarios critiques
+## 3. Tests end-to-end (Cypress)
 
-Test plan:
+Trois parcours critiques, contre la vraie stack locale (backend + front + PostgreSQL démarrés) :
 
-Tester chaque fonctionnalite par un test end to end.
-Penser aux fonctionnalite anonymes
-Case d'erreur avec verification des reponses backend
+1. Inscription → upload → lien de partage → téléchargement via `/d/{token}`
+2. Fichier protégé, en anonyme : mauvais mot de passe refusé, bon mot de passe accepté
+3. Mes fichiers : suppression, le fichier disparaît de la liste
 
 ## 4. Critères d'acceptation
 
@@ -41,27 +43,18 @@ Case d'erreur avec verification des reponses backend
 | Mot de passe < 6 caractères     | Rejeté (422)           |
 | Téléchargement protégé sans mdp | Refusé (401)           |
 
-## 5. Instructions d'exécution
-
-**Backend (unitaires) :**
+## 5. Exécution
 
 ```bash
+# Backend (unitaires + intégration, rapport JaCoCo dans target/site/jacoco)
 cd Code/backend/datashare-backend
-./mvnw.cmd test                         # tous les tests
-./mvnw.cmd test -Dtest=FileCleanupServiceTest   # une classe
-```
+./mvnw.cmd test
 
-**Frontend (unitaires) :**
-
-```bash
+# Frontend (unitaires ; `npm run coverage` pour le rapport)
 cd Code/FE/frontend
-npm run test            # Vitest
-```
+npm run test
 
-**End-to-end (Cypress) :**
-
-```bash
-cd Code/FE/frontend
-npx cypress open        # mode interactif
-npx cypress run         # mode headless / CI
+# End-to-end (stack locale démarrée)
+npm run e2e         # headless
+npm run e2e:open    # interactif
 ```

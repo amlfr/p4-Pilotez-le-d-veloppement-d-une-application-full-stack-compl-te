@@ -1,12 +1,7 @@
--- Datashare — étape 2/2 : création du schéma (tables, contraintes).
--- À exécuter sur la base créée à l'étape 1 :
---   psql -U postgres -d datashare -f db/02-schema.sql
---
--- Le schéma doit rester aligné avec les entités JPA (com.datashare.entity) :
--- l'application démarre en spring.jpa.hibernate.ddl-auto=validate et refuse
--- de se lancer si une table ou une colonne manque.
+-- Tables de Datashare : psql -U postgres -d datashare -f db/02-schema.sql
+-- L'appli boote en ddl-auto=validate — schéma manquant = démarrage refusé.
 
--- Comptes utilisateurs (US01). Mot de passe stocké haché (BCrypt).
+-- Comptes (mot de passe haché BCrypt).
 CREATE TABLE users (
     id       uuid                   NOT NULL,
     email    character varying(255) NOT NULL,
@@ -16,8 +11,8 @@ CREATE TABLE users (
     CONSTRAINT uq_users_email UNIQUE (email)
 );
 
--- Métadonnées des fichiers partagés ; les octets vivent sur disque sous
--- stored_name. user_id nullable : upload anonyme (US07).
+-- Métadonnées des fichiers ; les octets vivent sur disque sous stored_name.
+-- user_id null = upload anonyme (US07).
 CREATE TABLE files (
     id              uuid                        NOT NULL,
     content_type    character varying(255)      NOT NULL,
@@ -35,7 +30,7 @@ CREATE TABLE files (
     CONSTRAINT fk_files_user           FOREIGN KEY (user_id) REFERENCES users (id)
 );
 
--- Tags d'un fichier (US08) — table de collection JPA (@ElementCollection).
+-- Tags (US08) — côté JPA, la @ElementCollection de StoredFile.
 CREATE TABLE file_tags (
     file_id uuid NOT NULL,
     tag     character varying(30),
