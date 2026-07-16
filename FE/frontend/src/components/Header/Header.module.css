@@ -22,28 +22,9 @@
   text-decoration: none;
 }
 
-.session {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  min-width: 0;
-}
-
-.user {
-  font-size: 16px;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 @media (max-width: 480px) {
   .brand {
     font-size: 24px;
     line-height: 32px;
-  }
-
-  .session {
-    gap: 8px;
   }
 }

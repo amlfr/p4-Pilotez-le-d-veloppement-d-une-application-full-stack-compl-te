@@ -5,7 +5,7 @@ import styles from "./Header.module.css";
 
 export default function Header() {
   const navigate = useNavigate();
-  const { name, token, logout } = useAuthStore();
+  const token = useAuthStore((state) => state.token);
 
   return (
     <header className={styles.header}>
@@ -14,12 +14,9 @@ export default function Header() {
           DataShare
         </Link>
         {token ? (
-          <div className={styles.session}>
-            <span className={styles.user}>{name}</span>
-            <Button variant="dark" onClick={() => logout()}>
-              Se déconnecter
-            </Button>
-          </div>
+          <Button variant="dark" onClick={() => navigate("/files")}>
+            Mon Espace
+          </Button>
         ) : (
           <Button variant="dark" onClick={() => navigate("/login")}>
             Se connecter

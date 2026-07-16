@@ -70,6 +70,8 @@ export default function TagInput({
           id="tag-input"
           className={styles.tagInput}
           type="text"
+          aria-invalid={error ? true : undefined}
+          aria-describedby={error ? "tag-input-error" : undefined}
           placeholder={tags.length ? "" : "Ajoutez un tag puis Entrée..."}
           value={input}
           maxLength={MAX_TAG_LENGTH}
@@ -81,7 +83,11 @@ export default function TagInput({
           onBlur={addTag}
         />
       </div>
-      {error && <p className={styles.tagError}>{error}</p>}
+      {error && (
+        <p id="tag-input-error" className={styles.tagError} role="alert">
+          {error}
+        </p>
+      )}
     </div>
   );
 }

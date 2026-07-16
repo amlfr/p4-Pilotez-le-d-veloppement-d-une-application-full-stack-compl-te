@@ -95,7 +95,9 @@ export default function Download() {
   if (loading) {
     return (
       <div className={styles.page}>
-        <p className={styles.status}>Chargement...</p>
+        <p className={styles.status} role="status">
+          Chargement...
+        </p>
       </div>
     );
   }
@@ -139,9 +141,15 @@ export default function Download() {
             }}
           />
         )}
-        {downloadError && <p className={styles.error}>{downloadError}</p>}
+        {downloadError && (
+          <p className={styles.error} role="alert">
+            {downloadError}
+          </p>
+        )}
         {done && (
-          <p className={styles.success}>Téléchargement lancé&nbsp;!</p>
+          <p className={styles.success} role="status">
+            Téléchargement lancé&nbsp;!
+          </p>
         )}
         <Button
           variant="tonal"

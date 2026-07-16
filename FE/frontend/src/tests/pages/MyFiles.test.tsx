@@ -128,7 +128,9 @@ describe("MyFiles", () => {
     renderMyFiles();
     await screen.findByText("a-supprimer.txt");
 
-    await user.click(screen.getByRole("button", { name: "Supprimer" }));
+    await user.click(
+      screen.getByRole("button", { name: "Supprimer a-supprimer.txt" }),
+    );
 
     expect(deleteFile).toHaveBeenCalledWith("f-seul", "jwt-abc");
     expect(screen.queryByText("a-supprimer.txt")).not.toBeInTheDocument();
@@ -155,7 +157,9 @@ describe("MyFiles", () => {
     renderMyFiles();
     await screen.findByText("notes.txt");
 
-    await user.click(screen.getByRole("button", { name: "Copier le lien" }));
+    await user.click(
+      screen.getByRole("button", { name: "Copier le lien de notes.txt" }),
+    );
 
     expect(writeText).toHaveBeenCalledWith("http://localhost/d/tok-42");
     expect(await screen.findByText("Copié !")).toBeInTheDocument();

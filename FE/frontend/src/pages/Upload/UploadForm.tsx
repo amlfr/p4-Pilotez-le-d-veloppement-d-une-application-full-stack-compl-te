@@ -88,12 +88,17 @@ export default function UploadForm({
             variant="tonal"
             type="button"
             className={styles.remove}
+            aria-label={`Retirer le fichier ${file.name}`}
             onClick={onRemove}
           >
             Retirer
           </Button>
         </div>
-        {fileError && <p className={styles.fileError}>{fileError}</p>}
+        {fileError && (
+          <p className={styles.fileError} role="alert">
+            {fileError}
+          </p>
+        )}
       </div>
       <div className={styles.fields}>
         <InputField
@@ -120,7 +125,11 @@ export default function UploadForm({
         </SelectField>
         {isLoggedIn && <TagInput tags={tags} onTagsChange={setTags} />}
       </div>
-      {error && <p className={styles.error}>{error}</p>}
+      {error && (
+        <p className={styles.error} role="alert">
+          {error}
+        </p>
+      )}
       <Button
         variant="tonal"
         type="submit"

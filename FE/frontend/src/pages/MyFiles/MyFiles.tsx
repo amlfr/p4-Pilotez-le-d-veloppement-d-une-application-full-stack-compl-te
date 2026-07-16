@@ -111,7 +111,11 @@ export default function MyFiles() {
     <SpaceLayout>
       <section className={styles.card}>
         <h1 className={styles.title}>Mes fichiers</h1>
-        <div className={styles.filters} role="tablist">
+        <div
+          className={styles.filters}
+          role="tablist"
+          aria-label="Filtrer les fichiers"
+        >
           {FILTERS.map(({ value, label }) => (
             <button
               key={value}
@@ -125,9 +129,15 @@ export default function MyFiles() {
             </button>
           ))}
         </div>
-        {error && <p className={styles.error}>{error}</p>}
+        {error && (
+          <p className={styles.error} role="alert">
+            {error}
+          </p>
+        )}
         {loading ? (
-          <p className={styles.empty}>Chargement...</p>
+          <p className={styles.empty} role="status">
+            Chargement...
+          </p>
         ) : visible.length === 0 ? (
           <p className={styles.empty}>
             {files.length === 0
@@ -160,7 +170,12 @@ export default function MyFiles() {
                 </div>
                 <div className={styles.actions}>
                   {item.password_protected && (
-                    <span className={styles.lock} title="Protégé par mot de passe">
+                    <span
+                      className={styles.lock}
+                      title="Protégé par mot de passe"
+                      role="img"
+                      aria-label="Protégé par mot de passe"
+                    >
                       <LockIcon />
                     </span>
                   )}
@@ -174,6 +189,12 @@ export default function MyFiles() {
                         variant="tonal"
                         type="button"
                         className={styles.rowButton}
+                        aria-label={
+                          copiedId === item.id
+                            ? `Lien de ${item.original_name} copié`
+                            : `Copier le lien de ${item.original_name}`
+                        }
+                        aria-live="polite"
                         onClick={() => handleCopy(item)}
                       >
                         {copiedId === item.id ? "Copié !" : "Copier le lien"}
@@ -182,6 +203,7 @@ export default function MyFiles() {
                         variant="dark"
                         type="button"
                         className={styles.rowButton}
+                        aria-label={`Supprimer ${item.original_name}`}
                         onClick={() => handleDelete(item)}
                       >
                         Supprimer

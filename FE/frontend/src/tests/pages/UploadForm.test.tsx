@@ -133,7 +133,9 @@ describe("UploadForm", () => {
     const user = userEvent.setup();
     const { onRemove } = renderForm();
 
-    await user.click(screen.getByRole("button", { name: "Retirer" }));
+    await user.click(
+      screen.getByRole("button", { name: "Retirer le fichier notes.txt" }),
+    );
 
     expect(onRemove).toHaveBeenCalled();
   });

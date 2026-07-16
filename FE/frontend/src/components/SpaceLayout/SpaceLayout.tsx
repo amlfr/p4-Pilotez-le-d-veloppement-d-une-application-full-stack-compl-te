@@ -73,7 +73,7 @@ export default function SpaceLayout({ children }: { children: ReactNode }) {
             DataShare
           </Link>
         </div>
-        <nav className={styles.nav}>
+        <nav className={styles.nav} aria-label="Navigation principale">
           <Link
             to="/files"
             className={styles.navItem}
@@ -90,6 +90,7 @@ export default function SpaceLayout({ children }: { children: ReactNode }) {
             type="button"
             className={`${styles.iconButton} ${styles.menuButton}`}
             aria-label="Ouvrir le menu"
+            aria-expanded={menuOpen}
             onClick={() => setMenuOpen(true)}
           >
             <MenuIcon />

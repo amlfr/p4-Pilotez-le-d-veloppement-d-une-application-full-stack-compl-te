@@ -23,7 +23,11 @@ export default function AuthCard({
     <form className={styles.card} onSubmit={onSubmit}>
       <h1 className={styles.title}>{title}</h1>
       <div className={styles.fields}>{children}</div>
-      {error && <p className={styles.error}>{error}</p>}
+      {error && (
+        <p className={styles.error} role="alert">
+          {error}
+        </p>
+      )}
       <div className={styles.actions}>{actions}</div>
     </form>
   );

@@ -47,6 +47,7 @@ export default function Home() {
         ref={inputRef}
         type="file"
         className={styles.fileInput}
+        aria-label="Choisir un fichier à téléverser"
         onChange={handleInputChange}
       />
     </div>

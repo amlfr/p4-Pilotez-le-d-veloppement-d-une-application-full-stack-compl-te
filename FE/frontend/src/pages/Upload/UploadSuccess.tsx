@@ -45,8 +45,10 @@ export default function UploadSuccess({ file, token, days }: UploadSuccessProps)
         Félicitations, ton fichier sera conservé chez nous pendant{" "}
         {retentionLabel(days)}&nbsp;!
       </p>
-      <p className={styles.linkBox}>{buildShareLink(token)}</p>
-      <Button variant="tonal" type="button" onClick={handleCopy}>
+      <p className={styles.linkBox} aria-label="Lien de partage">
+        {buildShareLink(token)}
+      </p>
+      <Button variant="tonal" type="button" aria-live="polite" onClick={handleCopy}>
         {copied ? "Lien copié !" : "Copier le lien"}
       </Button>
     </section>
