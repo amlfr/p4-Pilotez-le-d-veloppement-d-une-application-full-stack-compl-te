@@ -108,15 +108,15 @@ export default function SpaceLayout({ children }: { children: ReactNode }) {
               className={styles.actionButton}
               onClick={() => navigate("/upload")}
             >
-              Téléverser un fichier
+              Ajouter des fichiers
             </Button>
             <Button
-              variant="tonal"
+              variant="link"
               type="button"
               className={styles.actionButton}
               onClick={() => logout()}
             >
-              Se déconnecter
+              Déconnexion
             </Button>
           </div>
         </div>

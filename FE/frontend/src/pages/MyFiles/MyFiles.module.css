@@ -4,10 +4,7 @@
   gap: 24px;
   width: 100%;
   max-width: 1133px;
-  padding: 24px;
-  background: #fff;
-  border-radius: var(--radius-card);
-  box-shadow: 0 0 12px 0 rgba(0, 0, 0, 0.25);
+  padding: 24px 0;
 }
 
 .title {
@@ -20,33 +17,30 @@
 .filters {
   display: flex;
   width: fit-content;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
+  border: 1px solid rgba(215, 99, 11, 0.2);
+  border-radius: 24px;
+  background: rgba(255, 193, 145, 0.16);
   overflow: hidden;
 }
 
 .filter {
-  padding: 8px 24px;
+  padding: 8px 16px;
   border: none;
-  background: #fff;
-  font-size: 14px;
+  background: transparent;
+  font-size: 16px;
   line-height: 16px;
   cursor: pointer;
 }
 
-.filter + .filter {
-  border-left: 1px solid var(--color-border);
-}
-
 .filterActive {
-  background: var(--color-accent-bg);
-  color: var(--color-accent-dark);
-  font-weight: 500;
+  background: #e77a6e;
+  color: #fff;
 }
 
 .list {
   display: flex;
   flex-direction: column;
+  gap: 16px;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -55,13 +49,12 @@
 .row {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 16px;
   min-width: 0;
-  padding: 8px 0;
-}
-
-.row + .row {
-  border-top: 1px solid var(--color-border);
+  padding: 8px 16px;
+  background: rgba(255, 193, 145, 0.05);
+  border: 1px solid rgba(215, 99, 11, 0.2);
+  border-radius: var(--radius-sm);
 }
 
 .fileIcon {
@@ -80,19 +73,20 @@
 .fileName {
   font-size: 16px;
   line-height: 24px;
+  font-weight: 600;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .fileExpiry {
-  font-size: 12px;
+  font-size: 14px;
   line-height: 16px;
-  color: var(--color-placeholder);
+  color: #000;
 }
 
 .expired {
-  color: #c00;
+  color: #c62020;
 }
 
 .tags {
@@ -126,14 +120,17 @@
 .card .rowButton {
   width: auto;
   padding: 8px 12px;
-  font-size: 14px;
+  font-size: 16px;
   line-height: 16px;
+  background: transparent;
+  border: 1px solid #ffa569;
+  color: var(--color-accent);
 }
 
 .expiredNote {
-  font-size: 12px;
+  font-size: 14px;
   line-height: 16px;
-  color: var(--color-placeholder);
+  color: rgba(0, 0, 0, 0.5);
 }
 
 .empty {
@@ -150,7 +147,7 @@
 
 @media (max-width: 480px) {
   .card {
-    padding: 16px;
+    padding: 16px 0;
     gap: 16px;
   }
 
