@@ -29,3 +29,11 @@
   line-height: 24px;
   color: #fff;
 }
+
+/* The mobile mockups have no footer — and the upload/download sheets need the
+   bottom edge of the screen. On "Mon espace" the copyright lives in the drawer. */
+@media (max-width: 480px) {
+  .footer {
+    display: none;
+  }
+}

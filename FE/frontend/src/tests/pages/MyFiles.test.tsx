@@ -72,6 +72,8 @@ describe("MyFiles", () => {
       per_page: 20,
     });
 
+    const user = userEvent.setup();
+
     renderMyFiles();
 
     const activeRow = (await screen.findByText("rapport.pdf")).closest("li")!;
@@ -80,6 +82,10 @@ describe("MyFiles", () => {
       within(activeRow).getByTitle("Protégé par mot de passe"),
     ).toBeInTheDocument();
     expect(within(activeRow).getByText("cours")).toBeInTheDocument();
+
+    // US06 : par défaut l'historique n'affiche que les fichiers non expirés —
+    // il faut passer sur « Tous » pour voir les expirés.
+    await user.click(screen.getByRole("tab", { name: "Tous" }));
 
     const expiredRow = screen.getByText("ancien.zip").closest("li")!;
     expect(within(expiredRow).getByText("Expiré")).toBeInTheDocument();
@@ -106,6 +112,12 @@ describe("MyFiles", () => {
 
     renderMyFiles();
     await screen.findByText("actif.txt");
+
+    // US06 : « Seuls les fichiers non expirés sont affichés par défaut ».
+    expect(screen.queryByText("vieux.txt")).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("tab", { name: "Tous" }));
+    expect(screen.getByText("vieux.txt")).toBeInTheDocument();
 
     await user.click(screen.getByRole("tab", { name: "Actifs" }));
     expect(screen.queryByText("vieux.txt")).not.toBeInTheDocument();

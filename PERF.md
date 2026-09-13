@@ -56,18 +56,34 @@ c'est le réseau qui saturerait bien avant l'applicatif.
 
 ## 4. Budget de performance côté front
 
-| Indicateur                 | Budget visé | Mesuré        |
-| -------------------------- | ----------- | ------------- |
-| Taille du bundle JS (gzip) | < 250 Ko    | _À compléter_ |
-| First Contentful Paint     | < 1,5 s     | _À compléter_ |
-| Lighthouse — Performance   | ≥ 90        | _À compléter_ |
+Mesures du 2026-07-17 sur le build de production (`npm run build` puis
+`npm run preview`), Lighthouse en ligne de commande (`npx lighthouse`),
+Chrome headless. « Mobile » = préréglage par défaut de Lighthouse (Moto G,
+réseau 4G lent, CPU ralenti ×4) ; « Desktop » = `--preset=desktop`.
 
-Mesures :
+| Indicateur                 | Budget visé | Mesuré                              |
+| -------------------------- | ----------- | ----------------------------------- |
+| Taille du bundle JS (gzip) | < 250 Ko    | **83,4 Ko** (+ 2,6 Ko CSS)          |
+| First Contentful Paint     | < 1,5 s     | **0,3 s** desktop / **1,4 s** mobile |
+| Lighthouse — Performance   | ≥ 90        | **100** desktop / **100** mobile    |
+
+**Budget tenu sur les trois indicateurs.** Une première mesure mobile donnait
+89/100 (FCP 2,9 s) : la feuille de style Google Fonts, chargée de façon
+bloquante, retardait le premier rendu d'environ 1 s. Correctif dans
+`index.html` : chargement non bloquant (`media="print"` + `onload`, fallback
+`<noscript>`), la page s'affiche d'abord en police système puis bascule sur
+DM Sans (`display=swap`). Résultat : mobile 89 → 100, FCP 2,9 s → 1,4 s.
+
+Reproduire les mesures :
 
 ```bash
 cd Code/FE/frontend
 npm run build        # affiche la taille des chunks (Vite/Rollup)
-# + Lighthouse (DevTools Chrome) sur le build de production
+npm run preview      # sert dist/ sur http://localhost:4173
+npx lighthouse http://localhost:4173 --only-categories=performance \
+  --chrome-flags="--headless=new"            # mobile (défaut)
+npx lighthouse http://localhost:4173 --only-categories=performance \
+  --preset=desktop --chrome-flags="--headless=new"
 ```
 
 ## 5. Métriques suivies

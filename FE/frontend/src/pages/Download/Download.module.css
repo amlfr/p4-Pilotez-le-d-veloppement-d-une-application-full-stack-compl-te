@@ -95,14 +95,22 @@
   padding: 12px 24px;
 }
 
+/* Mobile: same full-bleed bottom sheet as the Upload card, so the two card
+   pages share one mobile shape. (No Figma frame exists for this page.) */
 @media (max-width: 480px) {
   .page {
-    padding: 0 16px;
+    flex: 1;
+    justify-content: flex-end;
+    padding: 0;
   }
 
   .card {
-    padding: 16px;
-    gap: 16px;
+    max-width: none;
+    border-radius: var(--radius-card) var(--radius-card) 0 0;
+  }
+
+  .title {
+    text-align: center;
   }
 
   .card .submit {

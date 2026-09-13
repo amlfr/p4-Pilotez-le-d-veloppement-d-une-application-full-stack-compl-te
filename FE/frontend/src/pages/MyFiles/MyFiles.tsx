@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ApiError } from "../../api/client";
 import {
   buildShareLink,
@@ -37,6 +37,22 @@ function LockIcon() {
   );
 }
 
+function MoreIcon() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      aria-hidden="true"
+    >
+      <circle cx="12" cy="5" r="1.8" />
+      <circle cx="12" cy="12" r="1.8" />
+      <circle cx="12" cy="19" r="1.8" />
+    </svg>
+  );
+}
+
 /** "Expire dans 2 jours" / "Expire demain" / "Expiré", like the mockups. */
 function expiryLabel(item: FileListItem): string {
   if (item.is_expired) return "Expiré";
@@ -53,8 +69,29 @@ export default function MyFiles() {
   const [files, setFiles] = useState<FileListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [filter, setFilter] = useState<Filter>("tous");
+  const [filter, setFilter] = useState<Filter>("actifs");
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const openMenuRef = useRef<HTMLDivElement | null>(null);
+
+  // Close the mobile row menu on outside click or Escape.
+  useEffect(() => {
+    if (!openMenuId) return;
+    const handlePointerDown = (event: PointerEvent) => {
+      if (!openMenuRef.current?.contains(event.target as Node)) {
+        setOpenMenuId(null);
+      }
+    };
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpenMenuId(null);
+    };
+    document.addEventListener("pointerdown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [openMenuId]);
 
   useEffect(() => {
     if (!token) return;
@@ -208,6 +245,52 @@ export default function MyFiles() {
                       >
                         Supprimer
                       </Button>
+                      {/* Same two actions, collapsed for mobile (CSS swaps them). */}
+                      <div
+                        className={styles.rowMenu}
+                        ref={openMenuId === item.id ? openMenuRef : null}
+                      >
+                        <button
+                          type="button"
+                          className={styles.menuButton}
+                          aria-label={`Actions pour ${item.original_name}`}
+                          aria-haspopup="menu"
+                          aria-expanded={openMenuId === item.id}
+                          onClick={() =>
+                            setOpenMenuId(
+                              openMenuId === item.id ? null : item.id,
+                            )
+                          }
+                        >
+                          <MoreIcon />
+                        </button>
+                        {openMenuId === item.id && (
+                          <div className={styles.menu} role="menu">
+                            <button
+                              type="button"
+                              role="menuitem"
+                              className={styles.menuItem}
+                              onClick={() => {
+                                setOpenMenuId(null);
+                                handleCopy(item);
+                              }}
+                            >
+                              Copier le lien
+                            </button>
+                            <button
+                              type="button"
+                              role="menuitem"
+                              className={styles.menuItem}
+                              onClick={() => {
+                                setOpenMenuId(null);
+                                handleDelete(item);
+                              }}
+                            >
+                              Supprimer
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </>
                   )}
                 </div>

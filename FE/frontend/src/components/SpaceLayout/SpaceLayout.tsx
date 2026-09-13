@@ -82,6 +82,30 @@ export default function SpaceLayout({ children }: { children: ReactNode }) {
             Mes fichiers
           </Link>
         </nav>
+        {/* Shown only under 768px, where the top-bar actions are hidden. */}
+        <div className={styles.drawerActions}>
+          <Button
+            variant="dark"
+            type="button"
+            onClick={() => {
+              setMenuOpen(false);
+              navigate("/upload");
+            }}
+          >
+            Ajouter des fichiers
+          </Button>
+          <Button
+            variant="tonal"
+            type="button"
+            className={styles.drawerLogout}
+            onClick={() => {
+              setMenuOpen(false);
+              logout();
+            }}
+          >
+            Déconnexion
+          </Button>
+        </div>
         <p className={styles.copyright}>Copyright DataShare© 2025</p>
       </aside>
       <div className={styles.content}>

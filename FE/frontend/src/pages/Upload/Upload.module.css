@@ -123,17 +123,22 @@
   white-space: nowrap;
 }
 
+/* Mobile (Figma 2:42 / 5:289 / 5:229): the card becomes a full-bleed sheet
+   flush with the bottom of the screen, rounded on its top corners only. The
+   idle step (heading + cloud) stays centred, so only .pageSheet moves. */
 @media (max-width: 480px) {
-  .page {
-    padding: 0 16px;
+  .pageSheet {
+    flex: 1;
+    justify-content: flex-end;
+    padding: 0;
   }
 
-  .card {
-    padding: 16px;
-    gap: 16px;
+  .pageSheet .card {
+    max-width: none;
+    border-radius: var(--radius-card) var(--radius-card) 0 0;
   }
 
-  .card .submit {
-    width: 100%;
+  .title {
+    text-align: center;
   }
 }

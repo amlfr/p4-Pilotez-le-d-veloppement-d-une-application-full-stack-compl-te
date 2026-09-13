@@ -12,7 +12,6 @@ logs
 *.njsproj
 *.sln
 *.sw?
-perf
 
 # ===== Backend — Spring Boot / Maven =====
 target/

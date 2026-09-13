@@ -4,7 +4,8 @@
 
 - **Backend** : JUnit 5 + Mockito (unitaires), MockMvc sur H2 en mémoire (intégration).
 - **Frontend** : Vitest + Testing Library (unitaires, dans `src/tests/`), Cypress (end-to-end).
-- **Couverture** : objectif 70 %. Mesuré : **92 % back** (JaCoCo), **79 % front** (V8).
+- **Couverture** : objectif 70 %. Mesuré le 11/09/2026 : **92 % back** (JaCoCo, 302/327 lignes),
+  **75 % front** (V8, 287/383 lignes).
   Rapports HTML archivés dans `Doc/coverage/`.
 
 ## 2. Couverture par User Story
@@ -15,11 +16,11 @@
 | US02 | Téléchargement via lien | `FileServiceTest`, `FileApiIntegrationTest`  | `Download`, e2e 1             |
 | US03 | Création de compte      | `AuthServiceTest`, `AuthApiIntegrationTest`  | `Register`, e2e 1             |
 | US04 | Connexion               | `AuthServiceTest`, `JwtServiceTest`          | `Login`                       |
-| US05 | Historique              | `FileServiceTest` (pagination, filtre tag)   | `MyFiles`, e2e 3              |
+| US05 | Historique              | `FileServiceTest` (pagination)               | `MyFiles`, e2e 3              |
 | US06 | Suppression             | `FileServiceTest` (403 autre propriétaire)   | `MyFiles`, e2e 3              |
 | US07 | Upload anonyme          | `FileServiceTest` (owner null)               | `UploadForm`, e2e 2           |
 | US08 | Tags                    | `FileServiceTest` (normalisation, doublons)  | `TagInput`, `UploadForm`      |
-| US09 | Mot de passe fichier    | `FileServiceTest`, `FileApiIntegrationTest`  | `Download`, e2e 2             |
+| US09 | Mot de passe fichier    | `FileServiceTest` (401/401/200)              | `Download`, e2e 2             |
 | US10 | Expiration automatique  | `FileCleanupServiceTest`                     | —                             |
 
 Bilan : 64 tests back, 52 tests front, 3 scénarios Cypress.

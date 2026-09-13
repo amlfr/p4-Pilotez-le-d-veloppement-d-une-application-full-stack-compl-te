@@ -88,7 +88,7 @@ export default function Upload() {
   // Success: share link + copy button.
   if (result && file) {
     return (
-      <div className={styles.page}>
+      <div className={`${styles.page} ${styles.pageSheet}`}>
         <UploadSuccess
           file={file}
           token={result.response.token}
@@ -101,7 +101,7 @@ export default function Upload() {
   // Form: file picked, choose options then upload.
   if (file) {
     return (
-      <div className={styles.page}>
+      <div className={`${styles.page} ${styles.pageSheet}`}>
         <UploadForm
           file={file}
           fileError={fileError}

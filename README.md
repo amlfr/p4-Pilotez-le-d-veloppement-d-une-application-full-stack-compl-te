@@ -10,7 +10,7 @@ Code/
 └── FE/frontend/                 React 19 + TypeScript + Vite
 ```
 
-The full API contract lives in [`OpenAPI.yaml`](../OpenAPI.yaml). A ready-to-run Postman
+The full API contract lives in [`OpenAPI.yaml`](../Doc/OpenAPI.yaml). A ready-to-run Postman
 collection covering every endpoint (happy paths and error cases) is in
 [`backend/datashare-backend/datashare.postman_collection.json`](backend/datashare-backend/datashare.postman_collection.json).
 
@@ -37,12 +37,12 @@ cd backend/datashare-backend
 cp .env.example .env      # then set DB_PASSWORD (and a JWT_SECRET)
 ```
 
-| Variable      | Purpose                          | Default                    |
-| ------------- | -------------------------------- | -------------------------- |
-| `DB_PASSWORD` | PostgreSQL password (required)   | *(empty)*                  |
-| `DB_USERNAME` | PostgreSQL user                  | `postgres`                 |
-| `DB_URL`      | JDBC URL                         | local `datashare` database |
-| `JWT_SECRET`  | JWT signing key (32+ chars)      | dev-only fallback          |
+| Variable      | Purpose                        | Default                    |
+| ------------- | ------------------------------ | -------------------------- |
+| `DB_PASSWORD` | PostgreSQL password (required) | _(empty)_                  |
+| `DB_USERNAME` | PostgreSQL user                | `postgres`                 |
+| `DB_URL`      | JDBC URL                       | local `datashare` database |
+| `JWT_SECRET`  | JWT signing key (32+ chars)    | dev-only fallback          |
 
 Backend, from `backend/datashare-backend/`:
 

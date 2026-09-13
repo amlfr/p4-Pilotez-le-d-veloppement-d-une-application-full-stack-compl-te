@@ -137,12 +137,29 @@
   white-space: nowrap;
 }
 
+/* 24px side gutters at both breakpoints, like the Figma frames. */
 .main {
   display: flex;
   flex-direction: column;
   align-items: center;
   flex: 1;
-  padding: 0 32px 32px;
+  padding: 0 24px 24px;
+}
+
+/* Mobile home for the top-bar actions (see the media query below). */
+.drawerActions {
+  display: none;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0 24px 24px;
+}
+
+/* The tonal variant is too pale over the gradient; match the nav pill instead. */
+.drawerActions .drawerLogout {
+  background: rgba(255, 255, 255, 0.4);
+  border: none;
+  color: #803a00;
+  font-weight: 600;
 }
 
 .scrim {
@@ -180,16 +197,17 @@
   }
 
   .topBar {
-    padding: 16px;
+    padding: 16px 24px;
   }
 
+  /* Figma (27:338) keeps the top bar to a single 72px row: hamburger + user.
+     The two actions have nowhere to go in the mockup, so they move into the
+     drawer rather than disappear. */
   .actions {
-    width: 100%;
-    justify-content: flex-end;
-    margin-left: 0;
+    display: none;
   }
 
-  .main {
-    padding: 0 16px 16px;
+  .drawerActions {
+    display: flex;
   }
 }
